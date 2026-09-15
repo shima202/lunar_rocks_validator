@@ -277,7 +277,7 @@
 
     <script>
         // En güncel Google Apps Script Web App URL'iniz:
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzj_E0pOfrZbAqj57oVqXThKvM-6XFlB4YPrt8zIGDt6cl7sNCDsWZsPBGqIGbxary2/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCRKjVU6FqGGhY_sEaBGZOV1UZ4ymPiyXNemEPNKnAKpEQTgHDZZennN_RrqGUErMA/exec";
 
         let metadata = null;
         let currentRockIndex = 0;
@@ -663,7 +663,7 @@
                 }
             });
 
-            document.getElementById('status').textContent = "Veriler Google Drive'a gönderiliyor...";
+            document.getElementById('status').textContent = "Veriler Google Drive'a ve E-Tabloya gönderiliyor...";
 
             try {
                 let response = await fetch(WEB_APP_URL, {
@@ -671,8 +671,8 @@
                     body: JSON.stringify(metadata)
                 });
                 let sonuc = await response.json();
-                document.getElementById('status').textContent = "✓ Veriler Google Drive'a başarıyla kaydedildi!";
-                alert("Başarılı!\nOluşturulan Dosya: " + (sonuc.fileName || "JSON Raporu"));
+                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor Drive'a ve E-Tabloya kaydedildi.";
+                alert("Başarılı!\nOluşturulan Drive Dosyası: " + (sonuc.fileName || "JSON Raporu"));
             } catch (error) {
                 document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
                 alert("Gönderim hatası: " + error);
