@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moon Rocks Validator - Cloud & Sheets Edition</title>
+    <title>Moon Rocks Validator - Team Edition</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -15,6 +15,50 @@
             display: flex;
             flex-direction: column;
         }
+        /* LOGIN MODAL STYLES */
+        #loginModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .login-card {
+            background: #2a2a3c;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .login-card h2 { color: #ef4444; font-size: 20px; text-align: center; }
+        .login-card p { font-size: 12px; color: #a0a0a0; text-align: center; }
+        .login-card input {
+            background: #1e1e2e;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .login-card button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .login-card button:hover { background: #dc2626; }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -29,8 +73,13 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             border-left: 4px solid #ef4444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .header h1 { font-size: 18px; color: #ef4444; }
+        .user-badge { font-size: 11px; background: rgba(239, 68, 68, 0.2); padding: 4px 10px; border-radius: 12px; color: #fca5a5; }
+
         .controls {
             padding: 10px 14px;
             background: rgba(255, 255, 255, 0.05);
@@ -42,45 +91,6 @@
         }
         .status { color: #22c55e; font-size: 11px; font-weight: 600; }
         
-        /* Kullanıcı Giriş Ekranı Stili */
-        #userModal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .modal-box {
-            background: #2a2a3c;
-            padding: 25px;
-            border-radius: 8px;
-            width: 350px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .modal-box h2 { font-size: 15px; color: #ef4444; text-align: center; }
-        .modal-box input {
-            padding: 8px;
-            background: #1e1e2e;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .modal-box button {
-            padding: 10px;
-            background: #22c55e;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
         .quick-nav-bar {
             background: rgba(255, 255, 255, 0.05);
             padding: 10px;
@@ -249,27 +259,28 @@
     </style>
 </head>
 <body>
-    <!-- KULLANICI GİRİŞ MODALI (İLK AÇILIŞTA ÇIKAR) -->
-    <div id="userModal">
-        <div class="modal-box">
-            <h2>Kullanıcı Bilgisi</h2>
-            <p style="font-size: 11px; color: #a0a0a0;">Lütfen değerlendirmeye başlamadan önce ad ve soyadınızı giriniz:</p>
-            <input type="text" id="inputAd" placeholder="Adınız" required>
-            <input type="text" id="inputSoyad" placeholder="Soyadınız" required>
-            <button onclick="kullaniciKaydet()">Başla →</button>
+
+    <!-- GİRİŞ (LOGIN) EKRANI -->
+    <div id="loginModal">
+        <div class="login-card">
+            <h2>🌙 Moon Rocks Validator</h2>
+            <p>Takım çalışması için lütfen adınızı ve soyadınızı girin. Size özel fotoğraf kümesi atanacaktır.</p>
+            <input type="text" id="userNameInput" placeholder="Ad Soyad (Örn: Ahmet Yılmaz)" autocomplete="off">
+            <button onclick="handleUserLogin()">Sisteme Giriş Yap →</button>
         </div>
     </div>
 
     <div class="container">
         <div class="header">
-            <h1>🌙 Moon Rocks Validator (Cloud & Sheets Edition)</h1>
+            <h1>🌙 Moon Rocks Validator (Team Edition)</h1>
+            <div id="currentUserBadge" class="user-badge">Kullanıcı: -</div>
         </div>
 
         <div class="controls">
-            <div class="status" id="status">Kullanıcı bekleniyor...</div>
+            <div class="status" id="status">Veriler yükleniyor...</div>
         </div>
 
-        <div id="loadingState" style="text-align: center; color: #888; padding: 40px; display: none;">
+        <div id="loadingState" style="text-align: center; color: #888; padding: 40px;">
             <p>data.json yükleniyor, lütfen bekleyin...</p>
         </div>
 
@@ -357,6 +368,8 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJaU9Pa2lVkxqcSciNhyYzuwl49luxZkUln2rGZedlbAv7hRYuwI5rs5T3V89Iyo_G/exec";
 
         let metadata = null;
+        let fullMetadata = null; // Tüm veriyi tutmak için
+        let loggedInUser = "";
         let currentRockIndex = 0;
         let allRocks = [];
         let imagesList = [];
@@ -364,70 +377,88 @@
         let isOverviewMode = true;
         let falseNegatives = {};
         const imageCache = {};
-        let userInfo = { ad: "", soyad: "" };
 
-        function kullaniciKaydet() {
-            const ad = document.getElementById('inputAd').value.trim();
-            const soyad = document.getElementById('inputSoyad').value.trim();
+        const IMAGES_PER_USER = 1; // Test için 1 fotoğraf (Normal sistemde 1000 yapılabilir)
 
-            if (!ad || !soyad) {
-                alert("Lütfen ad ve soyadınızı giriniz!");
-                return;
-            }
-
-            userInfo.ad = ad;
-            userInfo.soyad = soyad;
-            document.getElementById('userModal').style.display = 'none';
-            document.getElementById('loadingState').style.display = 'block';
-            
-            veriYukle();
-        }
-
-        async function veriYukle() {
+        window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('data.json dosyasına ulaşılamadı!');
-                const parsedData = await response.json();
-
-                metadata = parsedData;
-                imagesList = Object.keys(metadata);
-
-                allRocks = [];
-                imagesList.forEach(imgName => {
-                    let imgObj = metadata[imgName];
-                    let rocksArray = imgObj.rocks || imgObj.annotations || [];
-                    
-                    if (rocksArray && Array.isArray(rocksArray)) {
-                        rocksArray.forEach((rock, rockIdx) => {
-                            allRocks.push({ imageName: imgName, rockIndex: rockIdx, ...rock });
-                        });
-                    }
-
-                    if (!falseNegatives[imgName]) {
-                        let rawFn = imgObj.false_negatives || [];
-                        falseNegatives[imgName] = rawFn.map(item => ({ x: item.x, y: item.y }));
-                    }
-                });
-
-                if (allRocks.length === 0) {
-                    alert('data.json içinde kaya (rock) verisi bulunamadı.');
-                    return;
-                }
-
-                populateImageSelector(imagesList);
-
+                fullMetadata = await response.json();
+                
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('totalRocks').textContent = allRocks.length;
-                currentImageIndex = 0;
-                currentRockIndex = 0;
-                
-                showOverviewScreen();
-                
-                document.getElementById('status').textContent = `Hoş geldin ${userInfo.ad} ${userInfo.soyad} | ✓ Veriler yüklendi! Toplam taş: ${allRocks.length}`;
+                document.getElementById('status').textContent = '✓ Veriler yüklendi. Lütfen adınızı girin.';
             } catch (error) {
                 alert('Veriler yüklenirken hata oluştu: ' + error.message);
                 console.error(error);
             }
+        });
+
+        function handleUserLogin() {
+            const inputVal = document.getElementById('userNameInput').value.trim();
+            if (!inputVal) {
+                alert('Lütfen geçerli bir ad ve soyad girin!');
+                return;
+            }
+            loggedInUser = inputVal;
+            document.getElementById('currentUserBadge').textContent = `Kullanıcı: ${loggedInUser}`;
+            document.getElementById('loginModal').style.display = 'none';
+
+            initializeUserData();
+        }
+
+        function initializeUserData() {
+            let allImageKeys = Object.keys(fullMetadata);
+            
+            // Kullanıcı adına göre deterministik bir dilimleme yapalım ki her kullanıcıya farklı ve sabit bir grup fotoğraf gitsin
+            // Örn: 5000 fotoğrafta 1000'erli bölüştürme mantığı
+            let userHash = 0;
+            for (let i = 0; i < loggedInUser.length; i++) {
+                userHash += loggedInUser.charCodeAt(i);
+            }
+            let startIndex = (userHash * IMAGES_PER_USER) % allImageKeys.length;
+            
+            imagesList = [];
+            for (let i = 0; i < IMAGES_PER_USER; i++) {
+                let idx = (startIndex + i) % allImageKeys.length;
+                imagesList.push(allImageKeys[idx]);
+            }
+
+            // Sadece bu kullanıcıya atanan fotoğrafların metadata objesini oluşturalım
+            metadata = {};
+            imagesList.forEach(imgName => {
+                metadata[imgName] = fullMetadata[imgName];
+            });
+
+            allRocks = [];
+            imagesList.forEach(imgName => {
+                let imgObj = metadata[imgName];
+                let rocksArray = imgObj.rocks || imgObj.annotations || [];
+                
+                if (rocksArray && Array.isArray(rocksArray)) {
+                    rocksArray.forEach((rock, rockIdx) => {
+                        allRocks.push({ imageName: imgName, rockIndex: rockIdx, ...rock });
+                    });
+                }
+
+                if (!falseNegatives[imgName]) {
+                    let rawFn = imgObj.false_negatives || [];
+                    falseNegatives[imgName] = rawFn.map(item => ({ x: item.x, y: item.y }));
+                }
+            });
+
+            if (allRocks.length === 0) {
+                alert('Bu kullanıcıya atanacak kaya verisi bulunamadı.');
+                return;
+            }
+
+            populateImageSelector(imagesList);
+            document.getElementById('totalRocks').textContent = allRocks.length;
+            currentImageIndex = 0;
+            currentRockIndex = 0;
+            
+            showOverviewScreen();
+            document.getElementById('status').textContent = `✓ Hoş geldin ${loggedInUser}! Sana atanan ${imagesList.length} fotoğraf yüklendi.`;
         }
 
         document.addEventListener('keydown', function(event) {
@@ -522,7 +553,7 @@
             if (imgName !== currentImgName) {
                 const pendingCount = checkUnevaluatedRocks(currentImgName);
                 if (pendingCount > 0) {
-                    const confirmSwitch = confirm(`You didn't evaluate this rock! (Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var).\n\nYine de başka fotoğrafa geçmek istiyor musunuz?`);
+                    const confirmSwitch = confirm(`Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var.\n\nYine de başka fotoğrafa geçmek istiyor musunuz?`);
                     if (!confirmSwitch) {
                         document.getElementById('imageSelector').value = currentImgName;
                         return;
@@ -890,7 +921,7 @@
                 if (nextRockItem.imageName !== currentImgName) {
                     const pendingCount = checkUnevaluatedRocks(currentImgName);
                     if (pendingCount > 0) {
-                        const proceed = confirm(`You didn't evaluate this rock! (Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var).\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
+                        const proceed = confirm(`Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var.\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
                         if (!proceed) {
                             currentRockIndex--;
                             displayCurrentRock();
@@ -907,9 +938,9 @@
                 const currentImgName = allRocks[currentRockIndex].imageName;
                 const pendingCount = checkUnevaluatedRocks(currentImgName);
                 if (pendingCount > 0) {
-                    alert(`You didn't evaluate this rock! (Bu fotoğrafta henüz değerlendirilmemiş ${pendingCount} taş var.)`);
+                    alert(`Bu fotoğrafta henüz değerlendirilmemiş ${pendingCount} taş var.`);
                 } else {
-                    alert('Tüm taşlar incelendi!');
+                    alert('Tüm atanan taşlar incelendi! "Submit" butonuna basarak sonuçları gönderebilirsin.');
                 }
             }
         }
@@ -930,45 +961,45 @@
             }
         }
 
-        function hazırlikVerisi() {
+        function exportAnnotations() {
             Object.keys(falseNegatives).forEach(imgName => {
                 if (metadata[imgName]) {
                     metadata[imgName].false_negatives = falseNegatives[imgName];
                 }
             });
 
-            // Kullanıcı bilgilerini meta veriye ekle
-            return {
-                validator: `${userInfo.ad} ${userInfo.soyad}`,
-                timestamp: new Date().toISOString(),
-                data: metadata
-            };
-        }
-
-        function exportAnnotations() {
-            const paket = hazırlikVerisi();
-            const json = JSON.stringify(paket, null, 2);
+            const json = JSON.stringify(metadata, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `sam_false_negatives_${userInfo.ad}_${userInfo.soyad}.json`.toLowerCase();
+            a.download = `sam_annotations_${loggedInUser.replace(/\s+/g, '_')}.json`;
             a.click();
         }
 
         async function gopturSheetsGonder() {
-            const paket = hazırlikVerisi();
+            Object.keys(falseNegatives).forEach(imgName => {
+                if (metadata[imgName]) {
+                    metadata[imgName].false_negatives = falseNegatives[imgName];
+                }
+            });
+
+            // Kullanıcı bilgisini ve alt küme verisini pakete ekleyelim
+            const payload = {
+                validator_name: loggedInUser,
+                data: metadata
+            };
 
             document.getElementById('status').textContent = "Veriler Google Drive'a ve E-Tabloya gönderiliyor...";
 
             try {
                 let response = await fetch(WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify(paket)
+                    body: JSON.stringify(payload)
                 });
                 let sonuc = await response.json();
-                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor Drive'a ve E-Tabloya kaydedildi.";
-                alert("Başarılı!\nOluşturulan Drive Dosyası: " + (sonuc.fileName || "JSON Raporu"));
+                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor kaydedildi.";
+                alert(`Tebrikler ${loggedInUser}! Sonuçların başarıyla gönderildi.`);
             } catch (error) {
                 document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
                 alert("Gönderim hatası: " + error);
@@ -976,7 +1007,7 @@
         }
 
         function exportReport() {
-            let report = `MOON ROCKS SAM FALSE NEGATIVES REPORT\nValidator: ${userInfo.ad} ${userInfo.soyad}\n=======================================\n\n`;
+            let report = `MOON ROCKS SAM FALSE NEGATIVES REPORT\nValidator: ${loggedInUser}\n=======================================\n\n`;
             
             if (!allRocks || allRocks.length === 0) {
                 report += 'No data.\n';
@@ -1019,7 +1050,7 @@
             const url = URL.createObjectURL(blob);
             const aElem = document.createElement('a');
             aElem.href = url;
-            aElem.download = `sam_false_negatives_report_${userInfo.ad}_${userInfo.soyad}.txt`.toLowerCase();
+            aElem.download = `sam_report_${loggedInUser.replace(/\s+/g, '_')}.txt`;
             aElem.click();
         }
     </script>
