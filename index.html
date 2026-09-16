@@ -83,8 +83,10 @@
             border-radius: 3px;
             cursor: pointer;
         }
-        .rock-chip:hover { background: #ef4444; border-color: #ef4444; }
-        .rock-chip.active { background: #22c55e; border-color: #22c55e; font-weight: bold; }
+        .rock-chip:hover { opacity: 0.8; }
+        .rock-chip.pending { background: #f97316; border-color: #ea580c; color: white; } /* Turuncu: Pending */
+        .rock-chip.evaluated { background: #22c55e; border-color: #16a34a; color: white; } /* Yeşil: İşaretlenmiş */
+        .rock-chip.active { box-shadow: 0 0 0 2px #ffffff; font-weight: bold; }
 
         .panel {
             background: rgba(255, 255, 255, 0.03);
@@ -257,7 +259,7 @@
                     <span style="font-size: 11px; font-weight: 600; color: #ef4444;">Görsel Seçimi:</span>
                     <select id="imageSelector" onchange="onImageSelectorChange(this.value)"></select>
                 </div>
-                <div style="font-size: 10px; color: #a0a0a0;">Mevcut Görselin Taş Kısayolları:</div>
+                <div style="font-size: 10px; color: #a0a0a0;">Mevcut Görselin Taş Kısayolları (<span style="color:#f97316; font-weight:bold;">Turuncu: Pending</span>, <span style="color:#22c55e; font-weight:bold;">Yeşil: Değerlendirildi</span>):</div>
                 <div class="rock-shortcuts" id="rockShortcutsContainer"></div>
             </div>
 
@@ -413,7 +415,19 @@
             rocksOfImage.forEach(r => {
                 const chip = document.createElement('div');
                 chip.className = 'rock-chip';
-                if (r.globalIdx === currentRockIndex) chip.classList.add('active');
+                
+                // Renk kontrolü: Pending ise turuncu, aksi halde yeşil
+                const ann = r.annotation || r.validation_status;
+                if (ann === 'yes' || ann === 'no' || ann === 'review') {
+                    chip.classList.add('evaluated');
+                } else {
+                    chip.classList.add('pending');
+                }
+
+                if (r.globalIdx === currentRockIndex) {
+                    chip.classList.add('active');
+                }
+
                 chip.textContent = `#${r.id || (r.rockIndex + 1)}`;
                 chip.onclick = () => {
                     isOverviewMode = false;
@@ -426,7 +440,31 @@
             });
         }
 
+        // Mevcut görseldeki tüm taşların işaretlenip işaretlenmediğini kontrol eden fonksiyon
+        function checkUnevaluatedRocks(imgName) {
+            const rocksOfImage = allRocks.filter(r => r.imageName === imgName);
+            const unEvaluated = rocksOfImage.filter(r => {
+                const ann = r.annotation || r.validation_status;
+                return ann !== 'yes' && ann !== 'no' && ann !== 'review';
+            });
+            return unEvaluated.length;
+        }
+
         function onImageSelectorChange(imgName) {
+            const currentImgName = allRocks[currentRockIndex].imageName;
+            
+            // Eğer değiştirilmek istenen görsel ile mevcut görsel farklıysa kontrol et
+            if (imgName !== currentImgName) {
+                const pendingCount = checkUnevaluatedRocks(currentImgName);
+                if (pendingCount > 0) {
+                    const confirmSwitch = confirm(`You didn't evaluate this rock! (Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var).\n\nYine de başka fotoğrafa geçmek istiyor musunuz?`);
+                    if (!confirmSwitch) {
+                        document.getElementById('imageSelector').value = currentImgName;
+                        return;
+                    }
+                }
+            }
+
             const targetImgIdx = imagesList.indexOf(imgName);
             if (targetImgIdx !== -1) {
                 currentImageIndex = targetImgIdx;
@@ -455,7 +493,6 @@
             const canvas = document.getElementById('overviewCanvas');
             const ctx = canvas.getContext('2d');
 
-            // Fotoğraflar direkt 'validation/' klasörünün içinde yer alıyor
             let outlinedBasePath = "validation/" + imageName + "_outlined";
             let rawBasePath = "validation/" + imageName;
 
@@ -789,10 +826,30 @@
                 currentRockIndex++;
                 
                 if (nextRockItem.imageName !== currentImgName) {
+                    // Diğer fotoğrafa geçmeden önce mevcut fotoğrafta pending taş kalıp kalmadığını kontrol et
+                    const pendingCount = checkUnevaluatedRocks(currentImgName);
+                    if (pendingCount > 0) {
+                        const proceed = confirm(`You didn't evaluate this rock! (Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var).\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
+                        if (!proceed) {
+                            currentRockIndex--; // Geri al
+                            displayCurrentRock();
+                            return;
+                        }
+                    }
+
                     currentImageIndex = imagesList.indexOf(nextRockItem.imageName);
                     showOverviewScreen();
                 } else {
                     displayCurrentRock();
+                }
+            } else {
+                // Son taştayken de kontrol sağlayabiliriz
+                const currentImgName = allRocks[currentRockIndex].imageName;
+                const pendingCount = checkUnevaluatedRocks(currentImgName);
+                if (pendingCount > 0) {
+                    alert(`You didn't evaluate this rock! (Bu fotoğrafta henüz değerlendirilmemiş ${pendingCount} taş var.)`);
+                } else {
+                    alert('Tüm taşlar incelendi!');
                 }
             }
         }
