@@ -84,8 +84,8 @@
             cursor: pointer;
         }
         .rock-chip:hover { opacity: 0.8; }
-        .rock-chip.pending { background: #f97316; border-color: #ea580c; color: white; } /* Turuncu: Pending */
-        .rock-chip.evaluated { background: #22c55e; border-color: #16a34a; color: white; } /* Yeşil: İşaretlenmiş */
+        .rock-chip.pending { background: #f97316 !important; border-color: #ea580c !important; color: white !important; }
+        .rock-chip.evaluated { background: #22c55e !important; border-color: #16a34a !important; color: white !important; }
         .rock-chip.active { box-shadow: 0 0 0 2px #ffffff; font-weight: bold; }
 
         .panel {
@@ -416,7 +416,6 @@
                 const chip = document.createElement('div');
                 chip.className = 'rock-chip';
                 
-                // Renk kontrolü: Pending ise turuncu, aksi halde yeşil
                 const ann = r.annotation || r.validation_status;
                 if (ann === 'yes' || ann === 'no' || ann === 'review') {
                     chip.classList.add('evaluated');
@@ -440,7 +439,6 @@
             });
         }
 
-        // Mevcut görseldeki tüm taşların işaretlenip işaretlenmediğini kontrol eden fonksiyon
         function checkUnevaluatedRocks(imgName) {
             const rocksOfImage = allRocks.filter(r => r.imageName === imgName);
             const unEvaluated = rocksOfImage.filter(r => {
@@ -453,7 +451,6 @@
         function onImageSelectorChange(imgName) {
             const currentImgName = allRocks[currentRockIndex].imageName;
             
-            // Eğer değiştirilmek istenen görsel ile mevcut görsel farklıysa kontrol et
             if (imgName !== currentImgName) {
                 const pendingCount = checkUnevaluatedRocks(currentImgName);
                 if (pendingCount > 0) {
@@ -598,7 +595,6 @@
             function tryNext() {
                 if (index >= candidateUrls.length) {
                     if (errorCallback) errorCallback();
-                    else console.error("Görsel hiçbir uzantıyla yüklenemedi:", basePath);
                     return;
                 }
                 const img = new Image();
@@ -738,9 +734,7 @@
                             ctx.fillStyle = '#ef4444';
                             ctx.font = '10px sans-serif';
                             ctx.fillText('OUTLINE (Target Only)', popX2 + 4, popY2 + 12);
-                        }, function() {
-                            // Fallback
-                        });
+                        }, function() {});
                     });
                 });
             });
@@ -826,12 +820,11 @@
                 currentRockIndex++;
                 
                 if (nextRockItem.imageName !== currentImgName) {
-                    // Diğer fotoğrafa geçmeden önce mevcut fotoğrafta pending taş kalıp kalmadığını kontrol et
                     const pendingCount = checkUnevaluatedRocks(currentImgName);
                     if (pendingCount > 0) {
                         const proceed = confirm(`You didn't evaluate this rock! (Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var).\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
                         if (!proceed) {
-                            currentRockIndex--; // Geri al
+                            currentRockIndex--;
                             displayCurrentRock();
                             return;
                         }
@@ -843,7 +836,6 @@
                     displayCurrentRock();
                 }
             } else {
-                // Son taştayken de kontrol sağlayabiliriz
                 const currentImgName = allRocks[currentRockIndex].imageName;
                 const pendingCount = checkUnevaluatedRocks(currentImgName);
                 if (pendingCount > 0) {
