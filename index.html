@@ -368,7 +368,7 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJaU9Pa2lVkxqcSciNhyYzuwl49luxZkUln2rGZedlbAv7hRYuwI5rs5T3V89Iyo_G/exec";
 
         let metadata = null;
-        let fullMetadata = null; // Tüm veriyi tutmak için
+        let fullMetadata = null;
         let loggedInUser = "";
         let currentRockIndex = 0;
         let allRocks = [];
@@ -378,7 +378,7 @@
         let falseNegatives = {};
         const imageCache = {};
 
-        const IMAGES_PER_USER = 1; // Test için 1 fotoğraf (Normal sistemde 1000 yapılabilir)
+        const IMAGES_PER_USER = 1;
 
         window.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -410,8 +410,6 @@
         function initializeUserData() {
             let allImageKeys = Object.keys(fullMetadata);
             
-            // Kullanıcı adına göre deterministik bir dilimleme yapalım ki her kullanıcıya farklı ve sabit bir grup fotoğraf gitsin
-            // Örn: 5000 fotoğrafta 1000'erli bölüştürme mantığı
             let userHash = 0;
             for (let i = 0; i < loggedInUser.length; i++) {
                 userHash += loggedInUser.charCodeAt(i);
@@ -424,7 +422,6 @@
                 imagesList.push(allImageKeys[idx]);
             }
 
-            // Sadece bu kullanıcıya atanan fotoğrafların metadata objesini oluşturalım
             metadata = {};
             imagesList.forEach(imgName => {
                 metadata[imgName] = fullMetadata[imgName];
@@ -977,37 +974,8 @@
             a.click();
         }
 
-        async function gopturSheetsGonder() {
-            Object.keys(falseNegatives).forEach(imgName => {
-                if (metadata[imgName]) {
-                    metadata[imgName].false_negatives = falseNegatives[imgName];
-                }
-            });
-
-            // Kullanıcı bilgisini ve alt küme verisini pakete ekleyelim
-            const payload = {
-                validator_name: loggedInUser,
-                data: metadata
-            };
-
-            document.getElementById('status').textContent = "Veriler Google Drive'a ve E-Tabloya gönderiliyor...";
-
-            try {
-                let response = await fetch(WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                });
-                let sonuc = await response.json();
-                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor kaydedildi.";
-                alert(`Tebrikler ${loggedInUser}! Sonuçların başarıyla gönderildi.`);
-            } catch (error) {
-                document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
-                alert("Gönderim hatası: " + error);
-            }
-        }
-
-        function exportReport() {
-            let report = `MOON ROCKS SAM FALSE NEGATIVES REPORT\nValidator: ${loggedInUser}\n=======================================\n\n`;
+        function generateFullReportText() {
+            let report = `MOON ROCKS SAM FALSE NEGATIVES & VALIDATION REPORT\nValidator: ${loggedInUser}\n=======================================\n\n`;
             
             if (!allRocks || allRocks.length === 0) {
                 report += 'No data.\n';
@@ -1026,10 +994,13 @@
                     TheimgRocks.forEach((rock) => {
                         let x = Math.round(rock.x || rock.xmin || 0);
                         let y = Math.round(rock.y || rock.ymin || 0);
-                        report += `  - Rock #${rock.id || 1}: ${rock.annotation || rock.validation_status || 'PENDING'} | BBox: [${x},${y}]\n`;
+                        let w = Math.round(rock.width || (rock.xmax - x) || 0);
+                        let h = Math.round(rock.height || (rock.ymax - y) || 0);
+                        
+                        report += `  - Rock #${rock.id || (rock.rockIndex + 1)}: Status: ${rock.annotation || rock.validation_status || 'PENDING'} | BBox: [X: ${x}, Y: ${y}, Width: ${w}, Height: ${h}]\n`;
                         
                         if (rock.outline && Array.isArray(rock.outline) && rock.outline.length > 0) {
-                            report += `    Outline: `;
+                            report += `    Outline Points: `;
                             report += rock.outline.map(pt => `[${pt[0]},${pt[1]}]`).join(', ');
                             report += `\n`;
                         }
@@ -1045,6 +1016,42 @@
                     report += '\n---\n\n';
                 });
             }
+            return report;
+        }
+
+        async function gopturSheetsGonder() {
+            Object.keys(falseNegatives).forEach(imgName => {
+                if (metadata[imgName]) {
+                    metadata[imgName].false_negatives = falseNegatives[imgName];
+                }
+            });
+
+            // Rapor metnini ve tam koordinat detaylarını payload içine ekledik
+            const reportText = generateFullReportText();
+            const payload = {
+                validator_name: loggedInUser,
+                data: metadata,
+                report_text: reportText
+            };
+
+            document.getElementById('status').textContent = "Veriler ve rapor Google Drive'a ve E-Tabloya gönderiliyor...";
+
+            try {
+                let response = await fetch(WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                let sonuc = await response.json();
+                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor kaydedildi.";
+                alert(`Tebrikler ${loggedInUser}! Sonuçların ve detaylı raporun başarıyla gönderildi.`);
+            } catch (error) {
+                document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
+                alert("Gönderim hatası: " + error);
+            }
+        }
+
+        function exportReport() {
+            let report = generateFullReportText();
             
             const blob = new Blob([report], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
