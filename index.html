@@ -115,7 +115,7 @@
             overflow: auto;
             min-height: 350px;
         }
-        #unifiedCanvas {
+        #unifiedCanvas, #overviewCanvas {
             max-width: 100%;
             height: auto;
             cursor: crosshair;
@@ -221,6 +221,32 @@
             <p>data.json yükleniyor, lütfen bekleyin...</p>
         </div>
 
+        <!-- FALSE NEGATIVE OVERVIEW EKRANI -->
+        <div id="overviewContent" style="display: none; flex-direction: column; gap: 12px;">
+            <div class="instruction" style="border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.1);">
+                💡 <strong>Please mark the nondetected rocks:</strong> Bu fotoğrafta SAM tarafından tespit edilen tüm taşların genel görünümü aşağıdadır. Lütfen tespit edilememiş (False Negative) taşları üzerlerine tıklayarak işaretleyin.
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                    <span>False Negative Overview Window (Outlined & Detected Rocks)</span>
+                    <button class="undo-btn" onclick="removeOverviewLastPoint()">⌫ Son İşareti Sil (Undo)</button>
+                </div>
+                <div class="panel-content">
+                    <canvas id="overviewCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="controls-section" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; font-weight: bold; color: #3b82f6;">Görsel: <span id="overviewImageName">-</span></span> | False Negatives: <span id="overviewFnCount">0</span>
+                </div>
+                <div>
+                    <button class="btn-yes" style="padding: 10px 20px; font-size: 12px; cursor: pointer;" onclick="proceedToIndividualRocks()">Start Rock Validation →</button>
+                </div>
+            </div>
+        </div>
+
         <div id="mainContent" style="display: none; flex-direction: column; gap: 12px;">
             <div class="instruction">
                 💡 <strong>Sol Tık:</strong> Yeni nokta ekler. | <strong>Sağ Tık:</strong> Son noktayı siler. | <strong>Kısayollar:</strong> <kbd>Enter</kbd> = YES, <kbd>Esc</kbd> = NO, <kbd>Space</kbd> = REVIEW, <kbd>←/→</kbd> = Geçişler
@@ -276,12 +302,14 @@
     </div>
 
     <script>
-        // Güncellenmiş Google Apps Script Web App URL'iniz:
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzJaU9Pa2lVkxqcSciNhyYzuwl49luxZkUln2rGZedlbAv7hRYuwI5rs5T3V89Iyo_G/exec";
 
         let metadata = null;
         let currentRockIndex = 0;
         let allRocks = [];
+        let imagesList = [];
+        let currentImageIndex = 0;
+        let isOverviewMode = true;
         let falseNegatives = {};
         const imageCache = {};
 
@@ -292,7 +320,7 @@
                 const parsedData = await response.json();
 
                 metadata = parsedData;
-                let imagesList = Object.keys(metadata);
+                imagesList = Object.keys(metadata);
 
                 allRocks = [];
                 imagesList.forEach(imgName => {
@@ -319,10 +347,12 @@
                 populateImageSelector(imagesList);
 
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'flex';
                 document.getElementById('totalRocks').textContent = allRocks.length;
+                currentImageIndex = 0;
                 currentRockIndex = 0;
-                await displayCurrentRock();
+                
+                showOverviewScreen();
+                
                 document.getElementById('status').textContent = '✓ Veriler yüklendi! Toplam taş: ' + allRocks.length;
             } catch (error) {
                 alert('Veriler yüklenirken hata oluştu: ' + error.message);
@@ -331,7 +361,17 @@
         });
 
         document.addEventListener('keydown', function(event) {
+            const overviewContent = document.getElementById('overviewContent');
             const mainContent = document.getElementById('mainContent');
+            
+            if (overviewContent && overviewContent.style.display !== 'none') {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    proceedToIndividualRocks();
+                }
+                return;
+            }
+
             if (!mainContent || mainContent.style.display === 'none') return;
             if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
@@ -376,6 +416,9 @@
                 if (r.globalIdx === currentRockIndex) chip.classList.add('active');
                 chip.textContent = `#${r.id || (r.rockIndex + 1)}`;
                 chip.onclick = () => {
+                    isOverviewMode = false;
+                    document.getElementById('overviewContent').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'flex';
                     currentRockIndex = r.globalIdx;
                     displayCurrentRock();
                 };
@@ -384,28 +427,123 @@
         }
 
         function onImageSelectorChange(imgName) {
-            const targetIndex = allRocks.findIndex(r => r.imageName === imgName);
-            if (targetIndex !== -1) {
-                currentRockIndex = targetIndex;
-                displayCurrentRock();
+            const targetImgIdx = imagesList.indexOf(imgName);
+            if (targetImgIdx !== -1) {
+                currentImageIndex = targetImgIdx;
+                const targetRockIndex = allRocks.findIndex(r => r.imageName === imgName);
+                if (targetRockIndex !== -1) {
+                    currentRockIndex = targetRockIndex;
+                }
+                showOverviewScreen();
             }
         }
 
-        async function displayCurrentRock() {
-            if (!allRocks || allRocks.length === 0) return;
-            const rock = allRocks[currentRockIndex];
-            const imgName = rock.imageName;
+        function showOverviewScreen() {
+            isOverviewMode = true;
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('overviewContent').style.display = 'flex';
 
-            document.getElementById('currentRockNum').textContent = currentRockIndex + 1;
-            document.getElementById('currentImageName').textContent = imgName;
-            document.getElementById('imageSelector').value = imgName;
+            const currentImgName = imagesList[currentImageIndex];
+            document.getElementById('overviewImageName').textContent = currentImgName;
+            document.getElementById('imageSelector').value = currentImgName;
+            document.getElementById('overviewFnCount').textContent = falseNegatives[currentImgName]?.length || 0;
 
-            updateRockShortcuts(imgName);
-            drawUnifiedView(imgName, rock);
-            updateRockInfo(rock, imgName);
+            drawOverviewCanvas(currentImgName);
         }
 
-        function tryLoadingImage(basePath, successCallback) {
+        function drawOverviewCanvas(imageName) {
+            const canvas = document.getElementById('overviewCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // GitHub'daki 'outlined' klasöründen yükleme yolu (örn: outlined/render0998_original_outlined)
+            let outlinedBasePath = "outlined/" + imageName + "_outlined";
+            let rawBasePath = "validation/" + imageName;
+
+            tryLoadingImage(outlinedBasePath, function(img, loadedUrl) {
+                renderOverviewImage(canvas, ctx, img, imageName);
+            }, function() {
+                tryLoadingImage(rawBasePath, function(img) {
+                    renderOverviewImage(canvas, ctx, img, imageName);
+                });
+            });
+        }
+
+        function renderOverviewImage(canvas, ctx, img, imageName) {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            canvas.style.width = img.width + 'px';
+            canvas.style.height = img.height + 'px';
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
+            ctx.drawImage(img, 0, 0);
+
+            if (falseNegatives[imageName]) {
+                falseNegatives[imageName].forEach((pt, idx) => {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(idx + 1, pt.x + 9, pt.y - 4);
+                });
+            }
+
+            canvas.onclick = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = Math.round((e.clientX - rect.left) * scaleX);
+                const y = Math.round((e.clientY - rect.top) * scaleY);
+               
+                if (!falseNegatives[imageName]) falseNegatives[imageName] = [];
+                falseNegatives[imageName].push({ x: x, y: y });
+               
+                if (metadata[imageName]) {
+                    metadata[imageName].false_negatives = falseNegatives[imageName];
+                }
+
+                document.getElementById('overviewFnCount').textContent = falseNegatives[imageName].length;
+                drawOverviewCanvas(imageName);
+            };
+
+            canvas.oncontextmenu = (e) => {
+                e.preventDefault();
+                removeOverviewLastPoint();
+            };
+        }
+
+        function removeOverviewLastPoint() {
+            const currentImgName = imagesList[currentImageIndex];
+            if (falseNegatives[currentImgName] && falseNegatives[currentImgName].length > 0) {
+                falseNegatives[currentImgName].pop();
+                if (metadata[currentImgName]) {
+                    metadata[currentImgName].false_negatives = falseNegatives[currentImgName];
+                }
+                document.getElementById('overviewFnCount').textContent = falseNegatives[currentImgName].length;
+                drawOverviewCanvas(currentImgName);
+            }
+        }
+
+        function proceedToIndividualRocks() {
+            isOverviewMode = false;
+            document.getElementById('overviewContent').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'flex';
+
+            const currentImgName = imagesList[currentImageIndex];
+            const firstRockIdx = allRocks.findIndex(r => r.imageName === currentImgName);
+            if (firstRockIdx !== -1) {
+                currentRockIndex = firstRockIdx;
+            }
+            displayCurrentRock();
+        }
+
+        function tryLoadingImage(basePath, successCallback, errorCallback) {
             if (imageCache[basePath]) {
                 successCallback(imageCache[basePath], basePath);
                 return;
@@ -422,7 +560,8 @@
             let index = 0;
             function tryNext() {
                 if (index >= candidateUrls.length) {
-                    console.error("Görsel hiçbir uzantıyla yüklenemedi:", basePath);
+                    if (errorCallback) errorCallback();
+                    else console.error("Görsel hiçbir uzantıyla yüklenemedi:", basePath);
                     return;
                 }
                 const img = new Image();
@@ -437,6 +576,20 @@
                 img.src = candidateUrls[index];
             }
             tryNext();
+        }
+
+        function displayCurrentRock() {
+            if (!allRocks || allRocks.length === 0) return;
+            const rock = allRocks[currentRockIndex];
+            const imgName = rock.imageName;
+
+            document.getElementById('currentRockNum').textContent = currentRockIndex + 1;
+            document.getElementById('currentImageName').textContent = imgName;
+            document.getElementById('imageSelector').value = imgName;
+
+            updateRockShortcuts(imgName);
+            drawUnifiedView(imgName, rock);
+            updateRockInfo(rock, imgName);
         }
 
         function drawUnifiedView(imageName, rock) {
@@ -530,7 +683,7 @@
                     tryLoadingImage(rawBasePath, function(rawBgImg) {
                         ctx.drawImage(rawBgImg, cropX, cropY, expandW, expandH, popX2, popY2, popW, popH);
 
-                        let outlinedBasePath = "validation/" + imageName + "_outlined";
+                        let outlinedBasePath = "outlined/" + imageName + "_outlined";
                         tryLoadingImage(outlinedBasePath, function(outlinedImg) {
                             let scaleRatioX = popW / expandW;
                             let scaleRatioY = popH / expandH;
@@ -548,6 +701,8 @@
                             ctx.fillStyle = '#ef4444';
                             ctx.font = '10px sans-serif';
                             ctx.fillText('OUTLINE (Target Only)', popX2 + 4, popY2 + 12);
+                        }, function() {
+                            // Fallback
                         });
                     });
                 });
@@ -628,15 +783,33 @@
 
         function nextRock() {
             if (currentRockIndex < allRocks.length - 1) {
+                const nextRockItem = allRocks[currentRockIndex + 1];
+                const currentImgName = allRocks[currentRockIndex].imageName;
+                
                 currentRockIndex++;
-                displayCurrentRock();
+                
+                if (nextRockItem.imageName !== currentImgName) {
+                    currentImageIndex = imagesList.indexOf(nextRockItem.imageName);
+                    showOverviewScreen();
+                } else {
+                    displayCurrentRock();
+                }
             }
         }
 
         function previousRock() {
             if (currentRockIndex > 0) {
+                const prevRockItem = allRocks[currentRockIndex - 1];
+                const currentImgName = allRocks[currentRockIndex].imageName;
+                
                 currentRockIndex--;
-                displayCurrentRock();
+                
+                if (prevRockItem.imageName !== currentImgName) {
+                    currentImageIndex = imagesList.indexOf(prevRockItem.imageName);
+                    showOverviewScreen();
+                } else {
+                    displayCurrentRock();
+                }
             }
         }
 
