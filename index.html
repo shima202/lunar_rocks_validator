@@ -455,8 +455,8 @@
             const canvas = document.getElementById('overviewCanvas');
             const ctx = canvas.getContext('2d');
 
-            // GitHub'daki 'outlined' klasöründen yükleme yolu (örn: outlined/render0998_original_outlined)
-            let outlinedBasePath = "outlined/" + imageName + "_outlined";
+            // Fotoğraflar direkt 'validation/' klasörünün içinde yer alıyor
+            let outlinedBasePath = "validation/" + imageName + "_outlined";
             let rawBasePath = "validation/" + imageName;
 
             tryLoadingImage(outlinedBasePath, function(img, loadedUrl) {
@@ -683,7 +683,7 @@
                     tryLoadingImage(rawBasePath, function(rawBgImg) {
                         ctx.drawImage(rawBgImg, cropX, cropY, expandW, expandH, popX2, popY2, popW, popH);
 
-                        let outlinedBasePath = "outlined/" + imageName + "_outlined";
+                        let outlinedBasePath = "validation/" + imageName + "_outlined";
                         tryLoadingImage(outlinedBasePath, function(outlinedImg) {
                             let scaleRatioX = popW / expandW;
                             let scaleRatioY = popH / expandH;
