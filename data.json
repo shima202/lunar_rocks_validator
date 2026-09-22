@@ -1,5 +1,8 @@
 {
-  "render0998_original.jpg": {
+  "render0998_original": {
+    "raw_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render0998_original.jpg",
+    "masked_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render0998_original_outlined.png",
+    "false_negatives": [],
     "rocks": [
       {
         "id": 1,
@@ -4436,10 +4439,12 @@
         ],
         "annotation": null
       }
-    ],
-    "false_negatives": []
+    ]
   },
-  "render2807_original.jpg": {
+  "render2807_original": {
+    "raw_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render2807_original.jpg",
+    "masked_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render2807_original_outlined.png",
+    "false_negatives": [],
     "rocks": [
       {
         "id": 1,
@@ -12229,10 +12234,12 @@
         ],
         "annotation": null
       }
-    ],
-    "false_negatives": []
+    ]
   },
-  "render3732_original.jpg": {
+  "render3732_original": {
+    "raw_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render3732_original.jpg",
+    "masked_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render3732_original_outlined.png",
+    "false_negatives": [],
     "rocks": [
       {
         "id": 1,
@@ -18695,10 +18702,12 @@
         ],
         "annotation": null
       }
-    ],
-    "false_negatives": []
+    ]
   },
-  "render5317_original.jpg": {
+  "render5317_original": {
+    "raw_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render5317_original.jpg",
+    "masked_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render5317_original_outlined.png",
+    "false_negatives": [],
     "rocks": [
       {
         "id": 1,
@@ -24645,10 +24654,12 @@
         ],
         "annotation": null
       }
-    ],
-    "false_negatives": []
+    ]
   },
-  "render9127_original.jpg": {
+  "render9127_original": {
+    "raw_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render9127_original.jpg",
+    "masked_url": "https://raw.githubusercontent.com/shima202/lunar_rocks_validator/main/render9127_original_outlined.png",
+    "false_negatives": [],
     "rocks": [
       {
         "id": 1,
@@ -27524,7 +27535,6 @@
         ],
         "annotation": null
       }
-    ],
-    "false_negatives": []
+    ]
   }
 }
