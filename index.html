@@ -45,7 +45,6 @@
             padding: 20px;
         }
         
-        /* Modal / Pop-up Tasarımı */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -156,8 +155,8 @@
     </div>
 
     <script>
-        // TEK VE NET DEĞİŞKEN TANIMI (Hata almamak için sadece 1 tane olmalı)
-        const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a628ce42cd7.r2.dev";
+        // DÜZELTİLMİŞ DOĞRU CLOUDFLARE URL ADRESİ (3a620ce)
+        const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a620ce42cd7.r2.dev";
 
         let loggedInUser = "";
         let metadata = null;
@@ -173,19 +172,15 @@
             
             loggedInUser = inputVal;
             
-            // Kullanıcı rozetini güncelle
             const userBadge = document.getElementById('currentUserBadge');
             if (userBadge) userBadge.textContent = `Kullanıcı: ${loggedInUser}`;
             
-            // Modalı gizle ve yükleniyor yazısını göster
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('loadingState').style.display = 'block';
 
-            // Dinamik URL Oluşturma
             const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
             
             try {
-                // Cloudflare R2'den veri çekme
                 const response = await fetch(jsonUrl, {
                     method: 'GET',
                     mode: 'cors'
@@ -197,7 +192,6 @@
 
                 metadata = await response.json();
                 
-                // Yükleme tamamlandı
                 document.getElementById('loadingState').style.display = 'none';
                 
                 if (typeof initializeUserData === 'function') {
