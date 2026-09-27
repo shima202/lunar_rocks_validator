@@ -70,7 +70,14 @@
         .modal-card h2 {
             margin-bottom: 15px;
             font-size: 1.4rem;
-            color: #00b37e;
+            color: #e5484d;
+            text-align: center;
+        }
+        .modal-card p {
+            font-size: 0.85rem;
+            color: #a8a8b3;
+            margin-bottom: 20px;
+            text-align: center;
         }
         .form-group {
             margin-bottom: 20px;
@@ -78,7 +85,7 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #c4c4cc;
         }
         .form-group input, .form-group select {
@@ -86,28 +93,28 @@
             padding: 12px;
             background-color: #121214;
             border: 1px solid #323238;
-            border-radius: 4px;
+            border-radius: 6px;
             color: #fff;
             font-size: 0.95rem;
             outline: none;
         }
         .form-group input:focus, .form-group select:focus {
-            border-color: #00b37e;
+            border-color: #e5484d;
         }
         .btn-submit {
             width: 100%;
             padding: 12px;
-            background-color: #00875f;
+            background-color: #e5484d;
             color: #fff;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: background-color 0.2s;
         }
         .btn-submit:hover {
-            background-color: #00b37e;
+            background-color: #f2555a;
         }
         #loadingState {
             display: none;
@@ -132,24 +139,24 @@
     <!-- Giriş Modalı -->
     <div id="loginModal" class="modal-overlay">
         <div class="modal-card">
-            <h2>Giriş Yap</h2>
+            <h2>🌙 Moon Rocks Validator</h2>
+            <p>Lütfen adınızı ve incelemek istediğiniz Veri Paketini (JSON) seçin.</p>
             <div class="form-group">
-                <label for="userNameInput">Ad Soyad:</label>
-                <input type="text" id="userNameInput" placeholder="Örn: Shima Rahimi">
+                <input type="text" id="userNameInput" placeholder="Ad Soyad giriniz..." value="shima rahimi">
             </div>
             <div class="form-group">
-                <label for="jsonPackageSelect">Veri Paketi Seçin:</label>
+                <label for="jsonPackageSelect">Çalışılacak Paket Verisi:</label>
                 <select id="jsonPackageSelect">
-                    <option value="Paket_2_data_1.json">Paket 2 (Paket_2_data_1.json)</option>
-                    <option value="Paket_1_data_1.json">Paket 1 (Paket_1_data_1.json)</option>
+                    <option value="Paket_2_data_1.json">Paket 2 (Data 1)</option>
+                    <option value="Paket_1_data_1.json">Paket 1 (Data 1)</option>
                 </select>
             </div>
-            <button class="btn-submit" onclick="handleUserLogin()">Verileri Yükle ve Başla</button>
+            <button class="btn-submit" onclick="handleUserLogin()">Sisteme Giriş Yap ve Yükle →</button>
         </div>
     </div>
 
     <script>
-        // Cloudflare R2 Temel Bağlantı Adresi
+        // TEK VE NET DEĞİŞKEN TANIMI (Hata almamak için sadece 1 tane olmalı)
         const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a628ce42cd7.r2.dev";
 
         let loggedInUser = "";
@@ -170,15 +177,15 @@
             const userBadge = document.getElementById('currentUserBadge');
             if (userBadge) userBadge.textContent = `Kullanıcı: ${loggedInUser}`;
             
-            // Modalı kapat, yüklenme ekranını aç
+            // Modalı gizle ve yükleniyor yazısını göster
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('loadingState').style.display = 'block';
 
-            // Dinamik Cloudflare R2 URL Birleştirme
+            // Dinamik URL Oluşturma
             const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
             
             try {
-                // Cloudflare'den veriyi CORS modunda çekiyoruz
+                // Cloudflare R2'den veri çekme
                 const response = await fetch(jsonUrl, {
                     method: 'GET',
                     mode: 'cors'
@@ -190,26 +197,25 @@
 
                 metadata = await response.json();
                 
-                // Yükleme ekranını kapat
+                // Yükleme tamamlandı
                 document.getElementById('loadingState').style.display = 'none';
                 
                 if (typeof initializeUserData === 'function') {
                     initializeUserData();
                 } else {
-                    console.log("Veri başarıyla çekildi:", metadata);
+                    console.log("Veri başarıyla yüklendi:", metadata);
                 }
 
             } catch (error) {
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('loginModal').style.display = 'flex'; // Hata durumunda paneli aç
+                document.getElementById('loginModal').style.display = 'flex';
                 alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
                 console.error("Fetch Hatası:", error);
             }
         }
 
         function initializeUserData() {
-            // Ana uygulama yükleme adımları buraya gelebilir
-            console.log("Uygulama başarıyla başlatıldı.");
+            console.log("Sistem başarıyla aktif hale getirildi.");
         }
     </script>
 </body>
