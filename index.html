@@ -393,35 +393,59 @@
         let falseNegatives = {};
         const imageCache = {};
 
-        async function handleUserLogin() {
-            const inputVal = document.getElementById('userNameInput').value.trim();
-            const selectedPackage = document.getElementById('jsonPackageSelect').value;
+        async // Cloudflare R2 Temel Bağlantı Adresi
+const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a628ce42cd7.r2.dev";
 
-            if (!inputVal) {
-                alert('Lütfen geçerli bir ad ve soyad girin!');
-                return;
-            }
-            
-            loggedInUser = inputVal;
-            document.getElementById('currentUserBadge').textContent = `Kullanıcı: ${loggedInUser}`;
-            document.getElementById('loginModal').style.display = 'none';
-            document.getElementById('loadingState').style.display = 'block';
+async function handleUserLogin() {
+    const inputVal = document.getElementById('userNameInput').value.trim();
+    const selectedPackage = document.getElementById('jsonPackageSelect').value;
 
-            // Cloudflare R2'den ilgili JSON verisini cek
-            const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
-            
-            try {
-                const response = await fetch(jsonUrl);
-                if (!response.ok) throw new Error(`Veri indirilemedi! HTTP Hodu: ${response.status}`);
-                metadata = await response.json();
-                
-                document.getElementById('loadingState').style.display = 'none';
-                initializeUserData();
-            } catch (error) {
-                alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
-                console.error(error);
-            }
+    if (!inputVal) {
+        alert('Lütfen geçerli bir ad ve soyad girin!');
+        return;
+    }
+    
+    loggedInUser = inputVal;
+    
+    // Kullanıcı adını güncelle ve modalı kapat
+    const userBadge = document.getElementById('currentUserBadge');
+    if (userBadge) userBadge.textContent = `Kullanıcı: ${loggedInUser}`;
+    
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+
+    // Cloudflare R2'deki tam dosya yolunu oluşturma
+    const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
+    
+    try {
+        // İsteği CORS moduyla doğrudan Cloudflare'den çekiyoruz
+        const response = await fetch(jsonUrl, {
+            method: 'GET',
+            mode: 'cors'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Veri indirilemedi! HTTP Kodu: ${response.status}`);
         }
+
+        metadata = await response.json();
+        
+        // Yükleme ekranını kapatıp uygulamayı başlat
+        document.getElementById('loadingState').style.display = 'none';
+        
+        if (typeof initializeUserData === 'function') {
+            initializeUserData();
+        } else {
+            console.log("Veri başarıyla yüklendi.");
+        }
+
+    } catch (error) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('loginModal').style.display = 'flex'; // Hata durumunda giriş ekranına geri dön
+        alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
+        console.error("Fetch Hatası:", error);
+    }
+}
 
         function initializeUserData() {
             imagesList = Object.keys(metadata);
