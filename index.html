@@ -44,7 +44,6 @@
             align-items: center;
             padding: 20px;
         }
-        
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -155,9 +154,6 @@
     </div>
 
     <script>
-        // DÜZELTİLMİŞ DOĞRU CLOUDFLARE URL ADRESİ (3a620ce)
-        const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a620ce42cd7.r2.dev";
-
         let loggedInUser = "";
         let metadata = null;
 
@@ -178,16 +174,14 @@
             document.getElementById('loginModal').style.display = 'none';
             document.getElementById('loadingState').style.display = 'block';
 
-            const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
+            // DOĞRUDAN VE BİREBİR AÇIK CLOUDFLARE PUBLIC URL ADRESİ
+            const jsonUrl = "https://pub-bc527cfeccef44c985ef3a620ce42cd7.r2.dev/JSON_Ciktilari/" + selectedPackage;
             
             try {
-                const response = await fetch(jsonUrl, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
+                const response = await fetch(jsonUrl);
 
                 if (!response.ok) {
-                    throw new Error(`Veri indirilemedi! HTTP Kodu: ${response.status}`);
+                    throw new Error(`Veri indirilemedi! HTTP Status: ${response.status}`);
                 }
 
                 metadata = await response.json();
@@ -197,7 +191,7 @@
                 if (typeof initializeUserData === 'function') {
                     initializeUserData();
                 } else {
-                    console.log("Veri başarıyla yüklendi:", metadata);
+                    console.log("Veri başarıyla çekildi:", metadata);
                 }
 
             } catch (error) {
@@ -209,7 +203,7 @@
         }
 
         function initializeUserData() {
-            console.log("Sistem başarıyla aktif hale getirildi.");
+            console.log("Uygulama aktif.");
         }
     </script>
 </body>
