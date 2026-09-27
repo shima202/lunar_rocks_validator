@@ -39,7 +39,7 @@
         }
         .login-card h2 { color: #ef4444; font-size: 20px; text-align: center; }
         .login-card p { font-size: 12px; color: #a0a0a0; text-align: center; }
-        .login-card input {
+        .login-card input, .login-card select {
             background: #1e1e2e;
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 10px;
@@ -264,24 +264,37 @@
     <div id="loginModal">
         <div class="login-card">
             <h2>🌙 Moon Rocks Validator</h2>
-            <p>Takım çalışması için lütfen adınızı ve soyadınızı girin. Size özel fotoğraf kümesi atanacaktır.</p>
+            <p>Takım çalışması için lütfen adınızı girin ve atanmış paketinizi seçin.</p>
             <input type="text" id="userNameInput" placeholder="Ad Soyad" autocomplete="off">
-            <button onclick="handleUserLogin()">Sisteme Giriş Yap →</button>
+            <select id="userPackageInput">
+                <option value="Paket_1">Paket 1</option>
+                <option value="Paket_2">Paket 2</option>
+                <option value="Paket_3">Paket 3</option>
+                <option value="Paket_4">Paket 4</option>
+                <option value="Paket_5">Paket 5</option>
+                <option value="Paket_6">Paket 6</option>
+                <option value="Paket_7">Paket 7</option>
+                <option value="Paket_8">Paket 8</option>
+                <option value="Paket_9">Paket 9</option>
+                <option value="Paket_10">Paket 10</option>
+            </select>
+            <button id="loginBtn" onclick="handleUserLogin()" disabled>Yükleniyor...</button>
         </div>
     </div>
 
     <div class="container">
         <div class="header">
             <h1>🌙 Moon Rocks Validator (Team Edition)</h1>
-            <div id="currentUserBadge" class="user-badge">Kullanıcı: -</div>
+            <div id="currentUserBadge" class="user-badge">Kullanıcı: - | Paket: -</div>
         </div>
 
         <div class="controls">
-            <div class="status" id="status">Veriler yükleniyor...</div>
+            <div class="status" id="status">Veriler R2'den indiriliyor (486 MB), lütfen bekleyin...</div>
         </div>
 
         <div id="loadingState" style="text-align: center; color: #888; padding: 40px;">
-            <p>data.json yükleniyor, lütfen bekleyin...</p>
+            <p><strong>moon_rocks_report_continuation.json</strong> yükleniyor (~486 MB)...</p>
+            <p style="font-size: 12px; margin-top: 8px; color: #aaa;">İnternet hızınıza bağlı olarak bu işlem birkaç saniye sürebilir.</p>
         </div>
 
         <!-- FALSE NEGATIVE OVERVIEW EKRANI -->
@@ -366,10 +379,15 @@
 
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJT2kxEw7c_MWd9aL4ijSYpIzkj4GPXW5lWZwaoDlv8aWgZqRkne_DUDkU52gvR8YJjA/exec";
+        
+        // Cloudflare R2 Public Bağlantınız ve JSON Bağlantısı
+        const R2_BASE_URL = "https://pub-bc527cfeccef44c985ef3a620ce42cd7.r2.dev";
+        const JSON_URL = `${R2_BASE_URL}/moon_rocks_report_continuation.json`;
 
         let metadata = null;
         let fullMetadata = null;
         let loggedInUser = "";
+        let selectedPackage = "Paket_1";
         let currentRockIndex = 0;
         let allRocks = [];
         let imagesList = [];
@@ -378,19 +396,29 @@
         let falseNegatives = {};
         const imageCache = {};
 
-        const IMAGES_PER_USER = 1;
-
         window.addEventListener('DOMContentLoaded', async () => {
+            const savedUser = localStorage.getItem('moon_rocks_user');
+            const savedPkg = localStorage.getItem('moon_rocks_package');
+            if (savedUser) document.getElementById('userNameInput').value = savedUser;
+            if (savedPkg) document.getElementById('userPackageInput').value = savedPkg;
+
             try {
-                const response = await fetch('data.json');
-                if (!response.ok) throw new Error('data.json dosyasına ulaşılamadı!');
+                // R2 üzerinden güncel JSON dosyasını çekiyoruz
+                const response = await fetch(JSON_URL);
+                if (!response.ok) throw new Error('JSON dosyasına R2 üzerinden ulaşılamadı!');
+                
                 fullMetadata = await response.json();
                 
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('status').textContent = '✓ Veriler yüklendi. Lütfen adınızı girin.';
+                document.getElementById('status').textContent = '✓ Veriler yüklendi. Giriş yapabilirsiniz.';
+                
+                const loginBtn = document.getElementById('loginBtn');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sisteme Giriş Yap →';
             } catch (error) {
-                alert('Veriler yüklenirken hata oluştu: ' + error.message);
+                alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
                 console.error(error);
+                document.getElementById('status').textContent = '✗ JSON Yükleme Hatası!';
             }
         });
 
@@ -401,35 +429,33 @@
                 return;
             }
             loggedInUser = inputVal;
-            document.getElementById('currentUserBadge').textContent = `Kullanıcı: ${loggedInUser}`;
+            selectedPackage = document.getElementById('userPackageInput').value;
+
+            localStorage.setItem('moon_rocks_user', loggedInUser);
+            localStorage.setItem('moon_rocks_package', selectedPackage);
+
+            document.getElementById('currentUserBadge').textContent = `Kullanıcı: ${loggedInUser} | Paket: ${selectedPackage}`;
             document.getElementById('loginModal').style.display = 'none';
 
             initializeUserData();
         }
 
         function initializeUserData() {
-            let allImageKeys = Object.keys(fullMetadata);
-            
-            let userHash = 0;
-            for (let i = 0; i < loggedInUser.length; i++) {
-                userHash += loggedInUser.charCodeAt(i);
+            // JSON yapısında kök klasör Paket_X olabilir veya doğrudan resim anahtarları olabilir
+            let sourceData = fullMetadata;
+            if (fullMetadata[selectedPackage]) {
+                sourceData = fullMetadata[selectedPackage];
             }
-            let startIndex = (userHash * IMAGES_PER_USER) % allImageKeys.length;
-            
-            imagesList = [];
-            for (let i = 0; i < IMAGES_PER_USER; i++) {
-                let idx = (startIndex + i) % allImageKeys.length;
-                imagesList.push(allImageKeys[idx]);
-            }
+
+            let allImageKeys = Object.keys(sourceData);
+            imagesList = [...allImageKeys];
 
             metadata = {};
-            imagesList.forEach(imgName => {
-                metadata[imgName] = fullMetadata[imgName];
-            });
-
             allRocks = [];
+
             imagesList.forEach(imgName => {
-                let imgObj = metadata[imgName];
+                metadata[imgName] = sourceData[imgName];
+                let imgObj = sourceData[imgName];
                 let rocksArray = imgObj.rocks || imgObj.annotations || [];
                 
                 if (rocksArray && Array.isArray(rocksArray)) {
@@ -445,17 +471,22 @@
             });
 
             if (allRocks.length === 0) {
-                alert('Bu kullanıcıya atanacak kaya verisi bulunamadı.');
+                alert(`${selectedPackage} için incelenecek kaya verisi bulunamadı.`);
                 return;
             }
 
             populateImageSelector(imagesList);
             document.getElementById('totalRocks').textContent = allRocks.length;
-            currentImageIndex = 0;
-            currentRockIndex = 0;
+            
+            // Kaldığı yerden devam etme (localStorage)
+            const savedRockIdx = localStorage.getItem(`lastRockIdx_${loggedInUser}_${selectedPackage}`);
+            const savedImgIdx = localStorage.getItem(`lastImgIdx_${loggedInUser}_${selectedPackage}`);
+            
+            currentImageIndex = savedImgIdx !== null ? parseInt(savedImgIdx, 10) : 0;
+            currentRockIndex = savedRockIdx !== null ? parseInt(savedRockIdx, 10) : 0;
             
             showOverviewScreen();
-            document.getElementById('status').textContent = `✓ Hoş geldin ${loggedInUser}! Sana atanan ${imagesList.length} fotoğraf yüklendi.`;
+            document.getElementById('status').textContent = `✓ Hoş geldin ${loggedInUser}! ${selectedPackage} verileri yüklendi.`;
         }
 
         document.addEventListener('keydown', function(event) {
@@ -529,6 +560,7 @@
                     document.getElementById('overviewContent').style.display = 'none';
                     document.getElementById('mainContent').style.display = 'flex';
                     currentRockIndex = r.globalIdx;
+                    saveProgress();
                     displayCurrentRock();
                 };
                 container.appendChild(chip);
@@ -565,8 +597,14 @@
                 if (targetRockIndex !== -1) {
                     currentRockIndex = targetRockIndex;
                 }
+                saveProgress();
                 showOverviewScreen();
             }
+        }
+
+        function saveProgress() {
+            localStorage.setItem(`lastRockIdx_${loggedInUser}_${selectedPackage}`, currentRockIndex);
+            localStorage.setItem(`lastImgIdx_${loggedInUser}_${selectedPackage}`, currentImageIndex);
         }
 
         function showOverviewScreen() {
@@ -586,10 +624,10 @@
             const canvas = document.getElementById('overviewCanvas');
             const ctx = canvas.getContext('2d');
 
-            let outlinedBasePath = "validation/" + imageName + "_outlined";
-            let rawBasePath = "validation/" + imageName;
+            let outlinedBasePath = `${R2_BASE_URL}/${selectedPackage}/maskeli/${imageName}_outlined`;
+            let rawBasePath = `${R2_BASE_URL}/${selectedPackage}/orijinal/${imageName}`;
 
-            tryLoadingImage(outlinedBasePath, function(img, loadedUrl) {
+            tryLoadingImage(outlinedBasePath, function(img) {
                 renderOverviewImage(canvas, ctx, img, imageName);
             }, function() {
                 tryLoadingImage(rawBasePath, function(img) {
@@ -670,6 +708,7 @@
             if (firstRockIdx !== -1) {
                 currentRockIndex = firstRockIdx;
             }
+            saveProgress();
             displayCurrentRock();
         }
 
@@ -725,9 +764,9 @@
             const canvas = document.getElementById('unifiedCanvas');
             const ctx = canvas.getContext('2d');
            
-            let rawBasePath = "validation/" + imageName;
+            let rawBasePath = `${R2_BASE_URL}/${selectedPackage}/orijinal/${imageName}`;
 
-            tryLoadingImage(rawBasePath, function(mainImg, loadedRawUrl) {
+            tryLoadingImage(rawBasePath, function(mainImg) {
                 canvas.width = mainImg.width;
                 canvas.height = mainImg.height;
                 canvas.style.width = mainImg.width + 'px';
@@ -812,7 +851,7 @@
                     tryLoadingImage(rawBasePath, function(rawBgImg) {
                         ctx.drawImage(rawBgImg, cropX, cropY, expandW, expandH, popX2, popY2, popW, popH);
 
-                        let outlinedBasePath = "validation/" + imageName + "_outlined";
+                        let outlinedBasePath = `${R2_BASE_URL}/${selectedPackage}/maskeli/${imageName}_outlined`;
                         tryLoadingImage(outlinedBasePath, function(outlinedImg) {
                             let scaleRatioX = popW / expandW;
                             let scaleRatioY = popH / expandH;
@@ -914,6 +953,7 @@
                 const currentImgName = allRocks[currentRockIndex].imageName;
                 
                 currentRockIndex++;
+                saveProgress();
                 
                 if (nextRockItem.imageName !== currentImgName) {
                     const pendingCount = checkUnevaluatedRocks(currentImgName);
@@ -921,12 +961,14 @@
                         const proceed = confirm(`Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var.\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
                         if (!proceed) {
                             currentRockIndex--;
+                            saveProgress();
                             displayCurrentRock();
                             return;
                         }
                     }
 
                     currentImageIndex = imagesList.indexOf(nextRockItem.imageName);
+                    saveProgress();
                     showOverviewScreen();
                 } else {
                     displayCurrentRock();
@@ -948,9 +990,11 @@
                 const currentImgName = allRocks[currentRockIndex].imageName;
                 
                 currentRockIndex--;
+                saveProgress();
                 
                 if (prevRockItem.imageName !== currentImgName) {
                     currentImageIndex = imagesList.indexOf(prevRockItem.imageName);
+                    saveProgress();
                     showOverviewScreen();
                 } else {
                     displayCurrentRock();
@@ -970,12 +1014,12 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `sam_annotations_${loggedInUser.replace(/\s+/g, '_')}.json`;
+            a.download = `sam_annotations_${selectedPackage}_${loggedInUser.replace(/\s+/g, '_')}.json`;
             a.click();
         }
 
         function generateFullReportText() {
-            let report = `MOON ROCKS SAM FALSE NEGATIVES & VALIDATION REPORT\nValidator: ${loggedInUser}\n=======================================\n\n`;
+            let report = `MOON ROCKS SAM FALSE NEGATIVES & VALIDATION REPORT\nValidator: ${loggedInUser}\nPackage: ${selectedPackage}\n=======================================\n\n`;
             
             if (!allRocks || allRocks.length === 0) {
                 report += 'No data.\n';
@@ -1029,6 +1073,7 @@
             const reportText = generateFullReportText();
             const payload = {
                 validator_name: loggedInUser,
+                package_name: selectedPackage,
                 data: metadata,
                 report_text: reportText
             };
@@ -1042,7 +1087,7 @@
                 });
                 let sonuc = await response.json();
                 document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor kaydedildi.";
-                alert(`Tebrikler ${loggedInUser}! Sonuçların ve detaylı raporun başarıyla gönderildi.`);
+                alert(`Tebrikler ${loggedInUser}! ${selectedPackage} sonuçların ve detaylı raporun başarıyla gönderildi.`);
             } catch (error) {
                 document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
                 alert("Gönderim hatası: " + error);
@@ -1056,7 +1101,7 @@
             const url = URL.createObjectURL(blob);
             const aElem = document.createElement('a');
             aElem.href = url;
-            aElem.download = `sam_report_${loggedInUser.replace(/\s+/g, '_')}.txt`;
+            aElem.download = `sam_report_${selectedPackage}_${loggedInUser.replace(/\s+/g, '_')}.txt`;
             aElem.click();
         }
     </script>
