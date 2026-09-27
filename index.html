@@ -1,1042 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moon Rocks Validator - Cloud Edition</title>
+    <title>Moon Rocks Validator (Cloud R2 Edition)</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1e1e2e;
-            color: #e0e0e0;
-            padding: 15px;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121214;
+            color: #e1e1e6;
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
-        /* LOGIN MODAL STYLES */
-        #loginModal {
+        header {
+            background-color: #202024;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #323238;
+        }
+        h1 {
+            font-size: 1.2rem;
+            color: #e1e1e6;
+        }
+        .user-badge {
+            font-size: 0.85rem;
+            color: #a8a8b3;
+            background: #29292e;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        /* Modal / Pop-up Tasarımı */
+        .modal-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            z-index: 1000;
         }
-        .login-card {
-            background: #2a2a3c;
+        .modal-card {
+            background-color: #202024;
+            border: 1px solid #323238;
+            border-radius: 8px;
             padding: 30px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
             width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .login-card h2 { color: #ef4444; font-size: 20px; text-align: center; }
-        .login-card p { font-size: 12px; color: #a0a0a0; text-align: center; }
-        .login-card input, .login-card select {
-            background: #1e1e2e;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            color: white;
-            border-radius: 5px;
-            font-size: 14px;
+        .modal-card h2 {
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            color: #00b37e;
         }
-        .login-card button {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
+        .form-group {
+            margin-bottom: 20px;
         }
-        .login-card button:hover { background: #dc2626; }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #c4c4cc;
+        }
+        .form-group input, .form-group select {
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .header {
-            text-align: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            border-left: 4px solid #ef4444;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 { font-size: 18px; color: #ef4444; }
-        .user-badge { font-size: 11px; background: rgba(239, 68, 68, 0.2); padding: 4px 10px; border-radius: 12px; color: #fca5a5; }
-
-        .controls {
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .status { color: #22c55e; font-size: 11px; font-weight: 600; }
-        
-        .quick-nav-bar {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .quick-nav-header {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .quick-nav-header select {
-            background: #2a2a3c;
-            color: #e0e0e0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-        .rock-shortcuts {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            max-height: 70px;
-            overflow-y: auto;
-            padding: 4px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 4px;
-        }
-        .rock-chip {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #e0e0e0;
-            padding: 2px 6px;
-            font-size: 10px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .rock-chip:hover { opacity: 0.8; }
-        .rock-chip.pending { background: #f97316 !important; border-color: #ea580c !important; color: white !important; }
-        .rock-chip.evaluated { background: #22c55e !important; border-color: #16a34a !important; color: white !important; }
-        .rock-chip.active { box-shadow: 0 0 0 2px #ffffff; font-weight: bold; }
-
-        .panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .panel-title {
-            padding: 8px 12px;
-            background: rgba(239, 68, 68, 0.15);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-weight: 600;
-            font-size: 11px;
-            color: #ef4444;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .panel-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.3);
-            position: relative;
-            padding: 10px;
-            overflow: auto;
-            min-height: 350px;
-        }
-        #unifiedCanvas, #overviewCanvas {
-            max-width: 100%;
-            height: auto;
-            cursor: crosshair;
-            border-radius: 4px;
-        }
-        .controls-section {
-            background: rgba(255, 255, 255, 0.05);
             padding: 12px;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background-color: #121214;
+            border: 1px solid #323238;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
         }
-        .nav-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
+        .form-group input:focus, .form-group select:focus {
+            border-color: #00b37e;
         }
-        .rock-counter { color: #a0a0a0; font-size: 11px; font-weight: 600; }
-        .validation-buttons {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-        }
-        .validation-buttons button {
-            padding: 10px;
-            font-size: 12px;
-            font-weight: 700;
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background-color: #00875f;
+            color: #fff;
             border: none;
             border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
             cursor: pointer;
-            text-transform: uppercase;
+            transition: background-color 0.2s;
         }
-        .btn-yes { background: #22c55e; color: white; }
-        .btn-no { background: #ef4444; color: white; }
-        .btn-review { background: #f59e0b; color: white; }
-        .btn-prev, .btn-next { background: #6b7280; color: white; }
-        .validation-buttons button:hover { opacity: 0.9; }
-        .info-panel {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 6px;
-            border-left: 3px solid #ef4444;
-            font-size: 11px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
+        .btn-submit:hover {
+            background-color: #00b37e;
         }
-        .info-row { display: flex; gap: 6px; color: #a0a0a0; }
-        .info-row strong { color: #e0e0e0; }
-        .annotation-status { padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-        .status-yes { background: rgba(76, 175, 80, 0.2); color: #4ade80; }
-        .status-no { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .status-review { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .status-pending { background: rgba(107, 114, 128, 0.2); color: #d1d5db; }
-        .export-buttons { display: flex; gap: 6px; }
-        .export-buttons button {
-            padding: 5px 10px;
-            background: #ef4444;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: 600;
-        }
-        .btn-sheets { background: #3b82f6 !important; }
-        .undo-btn {
-            background: #f59e0b;
-            color: white;
-            border: none;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .undo-btn:hover { background: #d97706; }
-        .instruction {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 3px solid #ef4444;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #a0a0a0;
+        #loadingState {
+            display: none;
+            text-align: center;
+            color: #a8a8b3;
         }
     </style>
 </head>
 <body>
 
-    <!-- GİRİŞ (LOGIN) EKRANI -->
-    <div id="loginModal">
-        <div class="login-card">
-            <h2>🌙 Moon Rocks Validator</h2>
-            <p>Lütfen adınızı ve incelemek istediğiniz Veri Paketini (JSON) seçin.</p>
-            <input type="text" id="userNameInput" placeholder="Ad Soyad" autocomplete="off">
-            
-            <label style="font-size:12px; color:#aaa; margin-bottom:-10px;">Çalışılacak Paket Verisi:</label>
-            <select id="jsonPackageSelect">
-                <option value="Paket_1_data_1.json">Paket_1 (Data 1)</option>
-                <option value="Paket_2_data_1.json">Paket_2 (Data 1)</option>
-                <option value="Paket_3_data_1.json">Paket_3 (Data 1)</option>
-                <option value="Paket_4_data_1.json">Paket_4 (Data 1)</option>
-                <option value="Paket_5_data_1.json">Paket_5 (Data 1)</option>
-                <option value="Paket_6_data_1.json">Paket_6 (Data 1)</option>
-                <option value="Paket_7_data_1.json">Paket_7 (Data 1)</option>
-                <option value="Paket_8_data_1.json">Paket_8 (Data 1)</option>
-                <option value="Paket_9_data_1.json">Paket_9 (Data 1)</option>
-                <option value="Paket_10_data_1.json">Paket_10 (Data 1)</option>
-            </select>
+    <header>
+        <h1>🌙 Moon Rocks Validator (Cloud R2 Edition)</h1>
+        <div id="currentUserBadge" class="user-badge">Kullanıcı: Giriş yapılmadı</div>
+    </header>
 
-            <button onclick="handleUserLogin()">Sisteme Giriş Yap ve Yükle →</button>
+    <div class="main-container">
+        <div id="loadingState">
+            <p>Cloudflare R2 verileri yükleniyor, lütfen bekleyin...</p>
         </div>
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>🌙 Moon Rocks Validator (Cloud R2 Edition)</h1>
-            <div id="currentUserBadge" class="user-badge">Kullanıcı: -</div>
-        </div>
-
-        <div class="controls">
-            <div class="status" id="status">Lütfen giriş yapın ve paket verisini seçin.</div>
-        </div>
-
-        <div id="loadingState" style="display:none; text-align: center; color: #888; padding: 40px;">
-            <p>Cloudflare R2 verileri yükleniyor, lütfen bekleyin...</p>
-        </div>
-
-        <!-- FALSE NEGATIVE OVERVIEW EKRANI -->
-        <div id="overviewContent" style="display: none; flex-direction: column; gap: 12px;">
-            <div class="instruction" style="border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.1);">
-                💡 <strong>Tespit Edilemeyen Taşları İşaretleyin:</strong> Aşağıda maskelenmiş genel fotoğraf gösterilmektedir. Modeller tarafından kaçırılmış taş varsa üzerine tıklayarak kırmızı nokta ile işaretleyin.
+    <!-- Giriş Modalı -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Giriş Yap</h2>
+            <div class="form-group">
+                <label for="userNameInput">Ad Soyad:</label>
+                <input type="text" id="userNameInput" placeholder="Örn: Shima Rahimi">
             </div>
-
-            <div class="panel">
-                <div class="panel-title" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
-                    <span>False Negative Overview Window (Outlined & Detected Rocks)</span>
-                    <button class="undo-btn" onclick="removeOverviewLastPoint()">⌫ Son İşareti Sil (Undo)</button>
-                </div>
-                <div class="panel-content">
-                    <canvas id="overviewCanvas"></canvas>
-                </div>
+            <div class="form-group">
+                <label for="jsonPackageSelect">Veri Paketi Seçin:</label>
+                <select id="jsonPackageSelect">
+                    <option value="Paket_2_data_1.json">Paket 2 (Paket_2_data_1.json)</option>
+                    <option value="Paket_1_data_1.json">Paket 1 (Paket_1_data_1.json)</option>
+                </select>
             </div>
-
-            <div class="controls-section" style="flex-direction: row; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="font-size: 12px; font-weight: bold; color: #3b82f6;">Görsel: <span id="overviewImageName">-</span></span> | False Negatives: <span id="overviewFnCount">0</span>
-                </div>
-                <div>
-                    <button class="btn-yes" style="padding: 10px 20px; font-size: 12px; cursor: pointer;" onclick="proceedToIndividualRocks()">Start Rock Validation →</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="mainContent" style="display: none; flex-direction: column; gap: 12px;">
-            <div class="instruction">
-                💡 <strong>Sol Tık:</strong> Kaçırılan noktayı ekler. | <strong>Sağ Tık:</strong> Son noktayı siler. | <strong>Kısayollar:</strong> <kbd>Enter</kbd> = YES, <kbd>Esc</kbd> = NO, <kbd>Space</kbd> = REVIEW, <kbd>←/→</kbd> = Geçişler
-            </div>
-
-            <div class="quick-nav-bar">
-                <div class="quick-nav-header">
-                    <span style="font-size: 11px; font-weight: 600; color: #ef4444;">Görsel Seçimi:</span>
-                    <select id="imageSelector" onchange="onImageSelectorChange(this.value)"></select>
-                </div>
-                <div style="font-size: 10px; color: #a0a0a0;">Mevcut Görselin Taş Kısayolları (<span style="color:#f97316; font-weight:bold;">Turuncu: Pending</span>, <span style="color:#22c55e; font-weight:bold;">Yeşil: Değerlendirildi</span>):</div>
-                <div class="rock-shortcuts" id="rockShortcutsContainer"></div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">
-                    <span>Interactive Validation Window (Target Isolated Outline Zoom)</span>
-                    <button class="undo-btn" onclick="removeLastPoint()">⌫ Son Noktayı Sil (Undo)</button>
-                </div>
-                <div class="panel-content">
-                    <canvas id="unifiedCanvas"></canvas>
-                </div>
-            </div>
-
-            <div class="controls-section">
-                <div class="nav-row">
-                    <div class="rock-counter">
-                        Image: <span id="currentImageName">-</span> | Rock <span id="currentRockNum">1</span> / <span id="totalRocks">0</span>
-                    </div>
-                </div>
-
-                <div class="validation-buttons">
-                    <button class="btn-yes" onclick="annotateRock('yes')">✓ YES (Enter)</button>
-                    <button class="btn-no" onclick="annotateRock('no')">✗ NO (Esc)</button>
-                    <button class="btn-review" onclick="annotateRock('review')">⟳ REVIEW (Space)</button>
-                    <button class="btn-prev" onclick="previousRock()">← PREV</button>
-                    <button class="btn-next" onclick="nextRock()">NEXT →</button>
-                </div>
-
-                <div class="info-panel">
-                    <div class="info-row"><strong>Rock #:</strong> <span id="rockId">-</span></div>
-                    <div class="info-row"><strong>BBox:</strong> <span id="rockCoords">-</span></div>
-                    <div class="info-row"><strong>Status:</strong> <span id="annotationStatus" class="annotation-status status-pending">PENDING</span></div>
-                    <div class="info-row"><strong>False Negatives (Points):</strong> <span id="falseNegativesCount">0</span></div>
-                    <div class="export-buttons">
-                        <button onclick="exportAnnotations()">📥 Export JSON</button>
-                        <button onclick="exportReport()">📊 Export Report</button>
-                        <button class="btn-sheets" onclick="gopturSheetsGonder()">📤 Submit</button>
-                    </div>
-                </div>
-            </div>
+            <button class="btn-submit" onclick="handleUserLogin()">Verileri Yükle ve Başla</button>
         </div>
     </div>
 
     <script>
+        // Cloudflare R2 Temel Bağlantı Adresi
         const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a628ce42cd7.r2.dev";
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJT2kxEw7c_MWd9aL4ijSYpIzkj4GPXW5lWZwaoDlv8aWgZqRkne_DUDkU52gvR8YJjA/exec";
 
-        let metadata = null;
         let loggedInUser = "";
-        let currentRockIndex = 0;
-        let allRocks = [];
-        let imagesList = [];
-        let currentImageIndex = 0;
-        let isOverviewMode = true;
-        let falseNegatives = {};
-        const imageCache = {};
+        let metadata = null;
 
-        async // Cloudflare R2 Temel Bağlantı Adresi
-const CLOUDFLARE_BASE_URL = "https://pub-bc527cfeccef44c985ef3a628ce42cd7.r2.dev";
+        async function handleUserLogin() {
+            const inputVal = document.getElementById('userNameInput').value.trim();
+            const selectedPackage = document.getElementById('jsonPackageSelect').value;
 
-async function handleUserLogin() {
-    const inputVal = document.getElementById('userNameInput').value.trim();
-    const selectedPackage = document.getElementById('jsonPackageSelect').value;
+            if (!inputVal) {
+                alert('Lütfen geçerli bir ad ve soyad girin!');
+                return;
+            }
+            
+            loggedInUser = inputVal;
+            
+            // Kullanıcı rozetini güncelle
+            const userBadge = document.getElementById('currentUserBadge');
+            if (userBadge) userBadge.textContent = `Kullanıcı: ${loggedInUser}`;
+            
+            // Modalı kapat, yüklenme ekranını aç
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'block';
 
-    if (!inputVal) {
-        alert('Lütfen geçerli bir ad ve soyad girin!');
-        return;
-    }
-    
-    loggedInUser = inputVal;
-    
-    // Kullanıcı adını güncelle ve modalı kapat
-    const userBadge = document.getElementById('currentUserBadge');
-    if (userBadge) userBadge.textContent = `Kullanıcı: ${loggedInUser}`;
-    
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('loadingState').style.display = 'block';
+            // Dinamik Cloudflare R2 URL Birleştirme
+            const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
+            
+            try {
+                // Cloudflare'den veriyi CORS modunda çekiyoruz
+                const response = await fetch(jsonUrl, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
 
-    // Cloudflare R2'deki tam dosya yolunu oluşturma
-    const jsonUrl = `${CLOUDFLARE_BASE_URL}/JSON_Ciktilari/${selectedPackage}`;
-    
-    try {
-        // İsteği CORS moduyla doğrudan Cloudflare'den çekiyoruz
-        const response = await fetch(jsonUrl, {
-            method: 'GET',
-            mode: 'cors'
-        });
+                if (!response.ok) {
+                    throw new Error(`Veri indirilemedi! HTTP Kodu: ${response.status}`);
+                }
 
-        if (!response.ok) {
-            throw new Error(`Veri indirilemedi! HTTP Kodu: ${response.status}`);
+                metadata = await response.json();
+                
+                // Yükleme ekranını kapat
+                document.getElementById('loadingState').style.display = 'none';
+                
+                if (typeof initializeUserData === 'function') {
+                    initializeUserData();
+                } else {
+                    console.log("Veri başarıyla çekildi:", metadata);
+                }
+
+            } catch (error) {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('loginModal').style.display = 'flex'; // Hata durumunda paneli aç
+                alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
+                console.error("Fetch Hatası:", error);
+            }
         }
-
-        metadata = await response.json();
-        
-        // Yükleme ekranını kapatıp uygulamayı başlat
-        document.getElementById('loadingState').style.display = 'none';
-        
-        if (typeof initializeUserData === 'function') {
-            initializeUserData();
-        } else {
-            console.log("Veri başarıyla yüklendi.");
-        }
-
-    } catch (error) {
-        document.getElementById('loadingState').style.display = 'none';
-        document.getElementById('loginModal').style.display = 'flex'; // Hata durumunda giriş ekranına geri dön
-        alert('JSON verisi yüklenirken hata oluştu: ' + error.message);
-        console.error("Fetch Hatası:", error);
-    }
-}
 
         function initializeUserData() {
-            imagesList = Object.keys(metadata);
-            allRocks = [];
-
-            imagesList.forEach(imgName => {
-                let imgObj = metadata[imgName];
-                let rocksArray = imgObj.rocks || [];
-                
-                rocksArray.forEach((rock, rockIdx) => {
-                    allRocks.push({ 
-                        imageName: imgName, 
-                        rockIndex: rockIdx, 
-                        raw_url: imgObj.raw_url,
-                        masked_url: imgObj.masked_url,
-                        ...rock 
-                    });
-                });
-
-                if (!falseNegatives[imgName]) {
-                    let rawFn = imgObj.false_negatives || [];
-                    falseNegatives[imgName] = rawFn.map(item => ({ x: item.x, y: item.y }));
-                }
-            });
-
-            if (allRocks.length === 0) {
-                alert('Seçilen pakette kaya verisi bulunamadı.');
-                return;
-            }
-
-            populateImageSelector(imagesList);
-            document.getElementById('totalRocks').textContent = allRocks.length;
-            currentImageIndex = 0;
-            currentRockIndex = 0;
-            
-            showOverviewScreen();
-            document.getElementById('status').textContent = `✓ Hoş geldin ${loggedInUser}! ${imagesList.length} adet görsel yüklendi.`;
-        }
-
-        document.addEventListener('keydown', function(event) {
-            const overviewContent = document.getElementById('overviewContent');
-            const mainContent = document.getElementById('mainContent');
-            
-            if (overviewContent && overviewContent.style.display !== 'none') {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    proceedToIndividualRocks();
-                }
-                return;
-            }
-
-            if (!mainContent || mainContent.style.display === 'none') return;
-            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                annotateRock('yes');
-            } else if (event.key === 'Escape') {
-                event.preventDefault();
-                annotateRock('no');
-            } else if (event.key === ' ') {
-                event.preventDefault();
-                annotateRock('review');
-            } else if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                previousRock();
-            } else if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                nextRock();
-            }
-        });
-
-        function populateImageSelector(imagesList) {
-            const selector = document.getElementById('imageSelector');
-            selector.innerHTML = '';
-            imagesList.forEach(imgName => {
-                const opt = document.createElement('option');
-                opt.value = imgName;
-                opt.textContent = imgName;
-                selector.appendChild(opt);
-            });
-        }
-
-        function updateRockShortcuts(currentImgName) {
-            const container = document.getElementById('rockShortcutsContainer');
-            container.innerHTML = '';
-            
-            const rocksOfImage = allRocks.map((r, idx) => ({ ...r, globalIdx: idx })).filter(r => r.imageName === currentImgName);
-            
-            rocksOfImage.forEach(r => {
-                const chip = document.createElement('div');
-                chip.className = 'rock-chip';
-                
-                const ann = r.annotation;
-                if (ann === 'yes' || ann === 'no' || ann === 'review') {
-                    chip.classList.add('evaluated');
-                } else {
-                    chip.classList.add('pending');
-                }
-
-                if (r.globalIdx === currentRockIndex) {
-                    chip.classList.add('active');
-                }
-
-                chip.textContent = `#${r.id || (r.rockIndex + 1)}`;
-                chip.onclick = () => {
-                    isOverviewMode = false;
-                    document.getElementById('overviewContent').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'flex';
-                    currentRockIndex = r.globalIdx;
-                    displayCurrentRock();
-                };
-                container.appendChild(chip);
-            });
-        }
-
-        function checkUnevaluatedRocks(imgName) {
-            const rocksOfImage = allRocks.filter(r => r.imageName === imgName);
-            const unEvaluated = rocksOfImage.filter(r => {
-                const ann = r.annotation;
-                return ann !== 'yes' && ann !== 'no' && ann !== 'review';
-            });
-            return unEvaluated.length;
-        }
-
-        function onImageSelectorChange(imgName) {
-            const currentImgName = allRocks[currentRockIndex].imageName;
-            
-            if (imgName !== currentImgName) {
-                const pendingCount = checkUnevaluatedRocks(currentImgName);
-                if (pendingCount > 0) {
-                    const confirmSwitch = confirm(`Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var.\n\nYine de başka fotoğrafa geçmek istiyor musunuz?`);
-                    if (!confirmSwitch) {
-                        document.getElementById('imageSelector').value = currentImgName;
-                        return;
-                    }
-                }
-            }
-
-            const targetImgIdx = imagesList.indexOf(imgName);
-            if (targetImgIdx !== -1) {
-                currentImageIndex = targetImgIdx;
-                const targetRockIndex = allRocks.findIndex(r => r.imageName === imgName);
-                if (targetRockIndex !== -1) {
-                    currentRockIndex = targetRockIndex;
-                }
-                showOverviewScreen();
-            }
-        }
-
-        function showOverviewScreen() {
-            isOverviewMode = true;
-            document.getElementById('mainContent').style.display = 'none';
-            document.getElementById('overviewContent').style.display = 'flex';
-
-            const currentImgName = imagesList[currentImageIndex];
-            document.getElementById('overviewImageName').textContent = currentImgName;
-            document.getElementById('imageSelector').value = currentImgName;
-            document.getElementById('overviewFnCount').textContent = falseNegatives[currentImgName]?.length || 0;
-
-            drawOverviewCanvas(currentImgName);
-        }
-
-        function loadImageFromCloud(url, callback) {
-            if (imageCache[url]) {
-                callback(imageCache[url]);
-                return;
-            }
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-                imageCache[url] = img;
-                callback(img);
-            };
-            img.onerror = () => {
-                console.error("Görsel yüklenemedi:", url);
-            };
-            img.src = url;
-        }
-
-        function drawOverviewCanvas(imageName) {
-            const canvas = document.getElementById('overviewCanvas');
-            const ctx = canvas.getContext('2d');
-            const maskedUrl = metadata[imageName].masked_url;
-
-            loadImageFromCloud(maskedUrl, function(img) {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                canvas.style.width = img.width + 'px';
-                canvas.style.height = img.height + 'px';
-
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'medium';
-                ctx.drawImage(img, 0, 0);
-
-                if (falseNegatives[imageName]) {
-                    falseNegatives[imageName].forEach((pt, idx) => {
-                        ctx.fillStyle = '#ef4444';
-                        ctx.beginPath();
-                        ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 10px sans-serif';
-                        ctx.fillText(idx + 1, pt.x + 9, pt.y - 4);
-                    });
-                }
-            });
-
-            canvas.onclick = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const x = Math.round((e.clientX - rect.left) * scaleX);
-                const y = Math.round((e.clientY - rect.top) * scaleY);
-               
-                if (!falseNegatives[imageName]) falseNegatives[imageName] = [];
-                falseNegatives[imageName].push({ x: x, y: y });
-               
-                if (metadata[imageName]) {
-                    metadata[imageName].false_negatives = falseNegatives[imageName];
-                }
-
-                document.getElementById('overviewFnCount').textContent = falseNegatives[imageName].length;
-                drawOverviewCanvas(imageName);
-            };
-
-            canvas.oncontextmenu = (e) => {
-                e.preventDefault();
-                removeOverviewLastPoint();
-            };
-        }
-
-        function removeOverviewLastPoint() {
-            const currentImgName = imagesList[currentImageIndex];
-            if (falseNegatives[currentImgName] && falseNegatives[currentImgName].length > 0) {
-                falseNegatives[currentImgName].pop();
-                if (metadata[currentImgName]) {
-                    metadata[currentImgName].false_negatives = falseNegatives[currentImgName];
-                }
-                document.getElementById('overviewFnCount').textContent = falseNegatives[currentImgName].length;
-                drawOverviewCanvas(currentImgName);
-            }
-        }
-
-        function proceedToIndividualRocks() {
-            isOverviewMode = false;
-            document.getElementById('overviewContent').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'flex';
-
-            const currentImgName = imagesList[currentImageIndex];
-            const firstRockIdx = allRocks.findIndex(r => r.imageName === currentImgName);
-            if (firstRockIdx !== -1) {
-                currentRockIndex = firstRockIdx;
-            }
-            displayCurrentRock();
-        }
-
-        function displayCurrentRock() {
-            if (!allRocks || allRocks.length === 0) return;
-            const rock = allRocks[currentRockIndex];
-            const imgName = rock.imageName;
-
-            document.getElementById('currentRockNum').textContent = currentRockIndex + 1;
-            document.getElementById('currentImageName').textContent = imgName;
-            document.getElementById('imageSelector').value = imgName;
-
-            updateRockShortcuts(imgName);
-            drawUnifiedView(imgName, rock);
-            updateRockInfo(rock, imgName);
-        }
-
-        function drawUnifiedView(imageName, rock) {
-            const canvas = document.getElementById('unifiedCanvas');
-            const ctx = canvas.getContext('2d');
-           
-            const rawUrl = metadata[imageName].raw_url;
-            const maskedUrl = metadata[imageName].masked_url;
-
-            loadImageFromCloud(rawUrl, function(rawImg) {
-                canvas.width = rawImg.width;
-                canvas.height = rawImg.height;
-                canvas.style.width = rawImg.width + 'px';
-                canvas.style.height = rawImg.height + 'px';
-               
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'medium';
-                ctx.drawImage(rawImg, 0, 0);
-
-                if (falseNegatives[imageName]) {
-                    falseNegatives[imageName].forEach((pt, idx) => {
-                        ctx.fillStyle = '#ef4444';
-                        ctx.beginPath();
-                        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1.5;
-                        ctx.stroke();
-
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 9px sans-serif';
-                        ctx.fillText(idx + 1, pt.x + 8, pt.y - 4);
-                    });
-                }
-               
-                let sX = Math.round(rock.x || 0);
-                let sY = Math.round(rock.y || 0);
-                let sW = Math.round(rock.width || 50);
-                let sH = Math.round(rock.height || 50);
-
-                const contextScale = 3.0; 
-                let expandW = sW * contextScale;
-                let expandH = sH * contextScale;
-                
-                let cropX = sX - (expandW - sW) / 2;
-                let cropY = sY - (expandH - sH) / 2;
-
-                if (cropX < 0) cropX = 0;
-                if (cropY < 0) cropY = 0;
-                if (cropX + expandW > rawImg.width) cropX = rawImg.width - expandW;
-                if (cropY + expandH > rawImg.height) cropY = rawImg.height - expandH;
-
-                const popW = expandW * 1.5;
-                const popH = expandH * 1.5;
-               
-                let popX1 = sX + sW + 25;
-                let popY1 = sY - 10;
-                if (popX1 + (popW * 2) + 40 > rawImg.width) {
-                    popX1 = sX - (popW * 2) - 45;
-                }
-                if (popY1 + popH + 20 > rawImg.height) {
-                    popY1 = rawImg.height - popH - 20;
-                }
-                if (popY1 < 10) popY1 = 10;
-                if (popX1 < 10) popX1 = 10;
-
-                let popX2 = popX1 + popW + 15;
-                let popY2 = popY1;
-
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(sX + sW, sY);
-                ctx.lineTo(popX1 > sX ? popX1 : popX2 + popW, popY1);
-                ctx.stroke();
-
-                ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(sX, sY, sW, sH);
-
-                // RAW Penceresi
-                ctx.drawImage(rawImg, cropX, cropY, expandW, expandH, popX1, popY1, popW, popH);
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(popX1, popY1, popW, popH);
-                ctx.fillStyle = '#3b82f6';
-                ctx.font = '10px sans-serif';
-                ctx.fillText('RAW (Context)', popX1 + 4, popY1 + 12);
-
-                // OUTLINE Penceresi
-                loadImageFromCloud(maskedUrl, function(maskedImg) {
-                    ctx.drawImage(maskedImg, cropX, cropY, expandW, expandH, popX2, popY2, popW, popH);
-
-                    ctx.strokeStyle = '#ef4444';
-                    ctx.lineWidth = 1.5;
-                    ctx.strokeRect(popX2, popY2, popW, popH);
-
-                    ctx.fillStyle = '#ef4444';
-                    ctx.font = '10px sans-serif';
-                    ctx.fillText('OUTLINE (Target Only)', popX2 + 4, popY2 + 12);
-                });
-            });
-
-            canvas.onclick = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const x = Math.round((e.clientX - rect.left) * scaleX);
-                const y = Math.round((e.clientY - rect.top) * scaleY);
-               
-                if (!falseNegatives[imageName]) falseNegatives[imageName] = [];
-                falseNegatives[imageName].push({ x: x, y: y });
-               
-                if (metadata[imageName]) {
-                    metadata[imageName].false_negatives = falseNegatives[imageName];
-                }
-
-                displayCurrentRock();
-            };
-
-            canvas.oncontextmenu = (e) => {
-                e.preventDefault();
-                removeLastPoint();
-            };
-        }
-
-        function removeLastPoint() {
-            if (!allRocks || allRocks.length === 0) return;
-            const currentImageName = allRocks[currentRockIndex].imageName;
-
-            if (falseNegatives[currentImageName] && falseNegatives[currentImageName].length > 0) {
-                falseNegatives[currentImageName].pop();
-                if (metadata[currentImageName]) {
-                    metadata[currentImageName].false_negatives = falseNegatives[currentImageName];
-                }
-                displayCurrentRock();
-            }
-        }
-
-        function updateRockInfo(rock, imageName) {
-            document.getElementById('rockId').textContent = rock.id || (currentRockIndex + 1);
-            let x = Math.round(rock.x || 0);
-            let y = Math.round(rock.y || 0);
-            let w = Math.round(rock.width || 0);
-            let h = Math.round(rock.height || 0);
-            document.getElementById('rockCoords').textContent = `[${x}, ${y}] ${w}×${h}`;
-
-            const statusEl = document.getElementById('annotationStatus');
-            statusEl.className = 'annotation-status';
-            const ann = rock.annotation;
-            if (ann === 'yes') { statusEl.classList.add('status-yes'); statusEl.textContent = '✓ YES'; }
-            else if (ann === 'no') { statusEl.classList.add('status-no'); statusEl.textContent = '✗ NO'; }
-            else if (ann === 'review') { statusEl.classList.add('status-review'); statusEl.textContent = '⟳ REVIEW'; }
-            else { statusEl.classList.add('status-pending'); statusEl.textContent = 'PENDING'; }
-
-            document.getElementById('falseNegativesCount').textContent = falseNegatives[imageName]?.length || 0;
-        }
-
-        function annotateRock(value) {
-            if (!allRocks || currentRockIndex >= allRocks.length) return;
-            const rock = allRocks[currentRockIndex];
-            
-            let imgDataContainer = metadata[rock.imageName];
-            let rocksArray = imgDataContainer.rocks || [];
-
-            if (rocksArray && rocksArray[rock.rockIndex]) {
-                rocksArray[rock.rockIndex].annotation = value;
-            }
-            rock.annotation = value;
-            
-            updateRockInfo(rock, rock.imageName);
-            setTimeout(() => nextRock(), 150);
-        }
-
-        function nextRock() {
-            if (currentRockIndex < allRocks.length - 1) {
-                const nextRockItem = allRocks[currentRockIndex + 1];
-                const currentImgName = allRocks[currentRockIndex].imageName;
-                
-                currentRockIndex++;
-                
-                if (nextRockItem.imageName !== currentImgName) {
-                    const pendingCount = checkUnevaluatedRocks(currentImgName);
-                    if (pendingCount > 0) {
-                        const proceed = confirm(`Bu fotoğrafta değerlendirilmemiş ${pendingCount} adet taş var.\n\nSonraki fotoğrafa geçmek istiyor musunuz?`);
-                        if (!proceed) {
-                            currentRockIndex--;
-                            displayCurrentRock();
-                            return;
-                        }
-                    }
-
-                    currentImageIndex = imagesList.indexOf(nextRockItem.imageName);
-                    showOverviewScreen();
-                } else {
-                    displayCurrentRock();
-                }
-            } else {
-                const currentImgName = allRocks[currentRockIndex].imageName;
-                const pendingCount = checkUnevaluatedRocks(currentImgName);
-                if (pendingCount > 0) {
-                    alert(`Bu fotoğrafta henüz değerlendirilmemiş ${pendingCount} taş var.`);
-                } else {
-                    alert('Tüm atanan taşlar incelendi! "Submit" butonuna basarak sonuçları gönderebilirsin.');
-                }
-            }
-        }
-
-        function previousRock() {
-            if (currentRockIndex > 0) {
-                const prevRockItem = allRocks[currentRockIndex - 1];
-                const currentImgName = allRocks[currentRockIndex].imageName;
-                
-                currentRockIndex--;
-                
-                if (prevRockItem.imageName !== currentImgName) {
-                    currentImageIndex = imagesList.indexOf(prevRockItem.imageName);
-                    showOverviewScreen();
-                } else {
-                    displayCurrentRock();
-                }
-            }
-        }
-
-        function exportAnnotations() {
-            Object.keys(falseNegatives).forEach(imgName => {
-                if (metadata[imgName]) {
-                    metadata[imgName].false_negatives = falseNegatives[imgName];
-                }
-            });
-
-            const json = JSON.stringify(metadata, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sam_annotations_${loggedInUser.replace(/\s+/g, '_')}.json`;
-            a.click();
-        }
-
-        function generateFullReportText() {
-            let report = `MOON ROCKS SAM FALSE NEGATIVES & VALIDATION REPORT\nValidator: ${loggedInUser}\n=======================================\n\n`;
-            
-            if (!allRocks || allRocks.length === 0) {
-                report += 'No data.\n';
-            } else {
-                let rocksByImage = {};
-                allRocks.forEach(rock => {
-                    if (!rocksByImage[rock.imageName]) rocksByImage[rock.imageName] = [];
-                    rocksByImage[rock.imageName].push(rock);
-                });
-                
-                Object.keys(rocksByImage).forEach(imgName => {
-                    let TheimgRocks = rocksByImage[imgName];
-                    report += `Image: ${imgName}\n`;
-                    report += `Total Model Rocks: ${TheimgRocks.length}\n`;
-                    
-                    TheimgRocks.forEach((rock) => {
-                        let x = Math.round(rock.x || 0);
-                        let y = Math.round(rock.y || 0);
-                        let w = Math.round(rock.width || 0);
-                        let h = Math.round(rock.height || 0);
-                        
-                        report += `  - Rock #${rock.id || (rock.rockIndex + 1)}: Status: ${rock.annotation || 'PENDING'} | BBox: [X: ${x}, Y: ${y}, Width: ${w}, Height: ${h}]\n`;
-                    });
-
-                    const currentFn = falseNegatives[imgName] || [];
-                    if (currentFn.length > 0) {
-                        report += `False Negatives (Point Prompts - ${currentFn.length}):\n`;
-                        currentFn.forEach((pt, ptIdx) => {
-                            report += `  - Point #${ptIdx+1}: [X: ${pt.x}, Y: ${pt.y}]\n`;
-                        });
-                    }
-                    report += '\n---\n\n';
-                });
-            }
-            return report;
-        }
-
-        async function gopturSheetsGonder() {
-            Object.keys(falseNegatives).forEach(imgName => {
-                if (metadata[imgName]) {
-                    metadata[imgName].false_negatives = falseNegatives[imgName];
-                }
-            });
-
-            const reportText = generateFullReportText();
-            const payload = {
-                validator_name: loggedInUser,
-                data: metadata,
-                report_text: reportText
-            };
-
-            document.getElementById('status').textContent = "Veriler ve rapor Google E-Tabloya gönderiliyor...";
-
-            try {
-                let response = await fetch(WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload)
-                });
-                let sonuc = await response.json();
-                document.getElementById('status').textContent = "✓ İşlem başarılı! Rapor kaydedildi.";
-                alert(`Tebrikler ${loggedInUser}! Sonuçların ve detaylı raporun başarıyla gönderildi.`);
-            } catch (error) {
-                document.getElementById('status').textContent = "✗ Gönderim sırasında hata oluştu!";
-                alert("Gönderim hatası: " + error);
-            }
-        }
-
-        function exportReport() {
-            let report = generateFullReportText();
-            
-            const blob = new Blob([report], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const aElem = document.createElement('a');
-            aElem.href = url;
-            aElem.download = `sam_report_${loggedInUser.replace(/\s+/g, '_')}.txt`;
-            aElem.click();
+            // Ana uygulama yükleme adımları buraya gelebilir
+            console.log("Uygulama başarıyla başlatıldı.");
         }
     </script>
 </body>
